@@ -1,0 +1,61 @@
+import Link from "next/link";
+import { getCountries, getEvents, getSourceCountsByEventIds } from "@/lib/data";
+import { EventCard } from "@/components/EventCard";
+
+export default async function HomePage() {
+  const [events, countries] = await Promise.all([getEvents(), getCountries()]);
+  const sourceCountByEventId = await getSourceCountsByEventIds(
+    events.map((event) => event.id)
+  );
+
+  const [featuredEvent, ...otherEvents] = events;
+
+  return (
+    <div className="mx-auto w-full max-w-md px-4 pt-8 md:max-w-[960px]">
+      <p className="text-sm font-medium tracking-wide text-accent-text">
+        Global FrameScope
+      </p>
+      <h1 className="mt-2 font-serif text-3xl leading-tight text-foreground">
+        Compare international framing, country by country
+      </h1>
+
+      {featuredEvent && (
+        <section className="mt-8">
+          <h2 className="mb-3 text-sm font-semibold text-foreground">
+            Today&rsquo;s major events
+          </h2>
+          <EventCard
+            event={featuredEvent}
+            countries={countries}
+            sourceCount={sourceCountByEventId.get(featuredEvent.id) ?? 0}
+            variant="featured"
+          />
+        </section>
+      )}
+
+      {otherEvents.length > 0 && (
+        <section className="mt-8 pb-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-foreground">
+              Other events
+            </h2>
+            <Link href="/events" className="text-sm font-medium text-accent-text">
+              View all
+            </Link>
+          </div>
+          <div className="space-y-3">
+            {otherEvents.map((event) => (
+              <EventCard
+                key={event.id}
+                event={event}
+                countries={countries}
+                sourceCount={sourceCountByEventId.get(event.id) ?? 0}
+                variant="compact"
+              />
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}

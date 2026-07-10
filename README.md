@@ -1,36 +1,35 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Global FrameScope
 
-## Getting Started
+**One event. Multiple countries. Many perspectives. You decide.**
 
-First, run the development server:
+Global FrameScope is a mobile-first application for comparing how the same major international event is framed by media across different countries — neutral event context, country-specific framing analysis, terminology/tone differences, and links to original sources. It's an analysis and comparison tool, not a news reader.
+
+## Current phase
+
+**Phase 1 — UI + mock data.** The app is being built with a complete UI and user flow backed by mock data only; no real database, external APIs, AI, or authentication yet. See [docs/ROADMAP.md](docs/ROADMAP.md) for phase status.
+
+## Tech stack
+
+- [Next.js](https://nextjs.org) 16 (App Router, `src/app/`)
+- React 19 + TypeScript (strict)
+- Tailwind CSS v4
+
+> This project runs on a Next.js version with breaking changes relative to older docs/training data. See [AGENTS.md](AGENTS.md) before writing code, and check `node_modules/next/dist/docs/` for the current API.
+
+## Getting started
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Documentation
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Documentation is the source of truth for this project — prefer it over assumptions or prior chat history:
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [docs/MVP_SPEC.md](docs/MVP_SPEC.md) — product definition, phases, pages, country model
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — stack, layer separation, data-access layer
+- [docs/UI_FLOW.md](docs/UI_FLOW.md) — navigation, routes, and screen flow
+- [docs/UI_DESIGN.md](docs/UI_DESIGN.md) — visual spec: typography, color tokens, light/dark themes, layout
+- [docs/ROADMAP.md](docs/ROADMAP.md) — phase-by-phase progress

@@ -1,26 +1,91 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f5f3ef;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-secondary: #eef1f4;
+  --foreground: #0d1b2a;
+  --muted-foreground: #6b7280;
+  --border: #e6e2da;
+  --accent: #d4af37;
+  --accent-strong: #d4af37;
+  --inverse-foreground: #ffffff;
+  --focus-ring: #d4af37;
+  /* Darker than --accent: the raw gold (#d4af37) only reaches ~1.9:1 contrast
+     against the light background, well under the 4.5:1 text minimum. This is
+     for gold *text*; keep using --accent for badges/borders/focus rings. */
+  --accent-text: #7e651b;
+  --emphasized-text: #047857;
+  --downplayed-text: #be123c;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-secondary: var(--surface-secondary);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-text: var(--accent-text);
+  --color-emphasized: var(--emphasized-text);
+  --color-downplayed: var(--downplayed-text);
+  --color-inverse-foreground: var(--inverse-foreground);
+  --color-focus-ring: var(--focus-ring);
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-playfair);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not([data-theme="light"]) {
+    --background: #07111e;
+    --surface: #0d1b2a;
+    --surface-elevated: #142238;
+    --surface-secondary: #1b263b;
+    --foreground: #f7f4ed;
+    --muted-foreground: #a8b5c7;
+    --border: #2a3a4e;
+    --accent: #d4af37;
+    --accent-strong: #e0be52;
+    --inverse-foreground: #0d1b2a;
+    --focus-ring: #e0be52;
+    /* Bright gold already reaches ~9:1 against the dark background, so no
+       darkening needed here (unlike the light-theme --accent-text above). */
+    --accent-text: #d4af37;
+    /* Lighter than the light-theme shades: emerald-700/rose-700 only reach
+       ~2.8-3.2:1 against the dark surface, under the 4.5:1 text minimum. */
+    --emphasized-text: #34d399;
+    --downplayed-text: #fb7185;
   }
+}
+
+:root[data-theme="dark"] {
+  --background: #07111e;
+  --surface: #0d1b2a;
+  --surface-elevated: #142238;
+  --surface-secondary: #1b263b;
+  --foreground: #f7f4ed;
+  --muted-foreground: #a8b5c7;
+  --border: #2a3a4e;
+  --accent: #d4af37;
+  --accent-strong: #e0be52;
+  --inverse-foreground: #0d1b2a;
+  --focus-ring: #e0be52;
+  --accent-text: #d4af37;
+  --emphasized-text: #34d399;
+  --downplayed-text: #fb7185;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }

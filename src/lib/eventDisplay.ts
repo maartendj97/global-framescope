@@ -6,13 +6,13 @@ export const CATEGORY_LABELS: Record<EventCategory, string> = {
   diplomacy: "Diplomacy",
 };
 
-// Fixed (non-theme-reactive) navy shades: a placeholder "photo" should stay
-// dark and moody in both light and dark UI themes, the way a real photo
-// would — not flip pale when --foreground swaps to light text color.
-export const CATEGORY_GRADIENTS: Record<EventCategory, string> = {
-  conflict: "linear-gradient(135deg, #0d1b2a 0%, #0d1b2a 60%, #d4af37 150%)",
-  climate: "linear-gradient(135deg, #d4af37 0%, #0d1b2a 70%)",
-  diplomacy: "linear-gradient(160deg, #0d1b2a 0%, #1b263b 100%)",
+// Local editorial-style placeholder illustrations, one per category. Fixed
+// dark navy backgrounds so they read as a "photo" in both light and dark
+// UI themes rather than flipping pale with the surrounding theme.
+export const CATEGORY_IMAGES: Record<EventCategory, string> = {
+  conflict: "/images/events/conflict.svg",
+  climate: "/images/events/climate.svg",
+  diplomacy: "/images/events/diplomacy.svg",
 };
 
 export function formatEventDate(isoDate: string): string {

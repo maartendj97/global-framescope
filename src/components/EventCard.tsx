@@ -1,7 +1,8 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { Country, Event } from "@/types";
 import { ChevronRightIcon } from "./icons";
-import { CATEGORY_LABELS, CATEGORY_GRADIENTS, formatEventDate } from "@/lib/eventDisplay";
+import { CATEGORY_LABELS, CATEGORY_IMAGES, formatEventDate } from "@/lib/eventDisplay";
 
 type EventCardProps = {
   event: Event;
@@ -51,10 +52,16 @@ export function EventCard({
         href={`/events/${event.id}`}
         className="block rounded-3xl border border-border bg-surface p-3 shadow-sm transition-shadow hover:shadow-md"
       >
-        <div
-          className="aspect-video w-full rounded-2xl"
-          style={{ background: CATEGORY_GRADIENTS[event.category] }}
-        />
+        <div className="relative aspect-video w-full overflow-hidden rounded-2xl">
+          <Image
+            src={CATEGORY_IMAGES[event.category]}
+            alt=""
+            fill
+            className="object-cover"
+            sizes="(min-width: 768px) 600px, 100vw"
+            priority
+          />
+        </div>
         <div className="mt-4 space-y-2 px-1 pb-1">
           {meta}
           <h2 className="font-serif text-xl leading-snug text-foreground">
@@ -72,10 +79,15 @@ export function EventCard({
       href={`/events/${event.id}`}
       className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-3 shadow-sm transition-shadow hover:shadow-md"
     >
-      <div
-        className="h-16 w-16 shrink-0 rounded-xl"
-        style={{ background: CATEGORY_GRADIENTS[event.category] }}
-      />
+      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl">
+        <Image
+          src={CATEGORY_IMAGES[event.category]}
+          alt=""
+          fill
+          className="object-cover"
+          sizes="64px"
+        />
+      </div>
       <div className="min-w-0 flex-1 space-y-1">
         {meta}
         <h3 className="font-serif text-base leading-snug text-foreground">

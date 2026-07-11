@@ -1,0 +1,47 @@
+<svg viewBox="0 0 800 450" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg-conflict" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0D1B2A" />
+      <stop offset="55%" stop-color="#0D1B2A" />
+      <stop offset="100%" stop-color="#1B263B" />
+    </linearGradient>
+    <radialGradient id="glow-conflict" cx="78%" cy="30%" r="55%">
+      <stop offset="0%" stop-color="#D4AF37" stop-opacity="0.16" />
+      <stop offset="100%" stop-color="#D4AF37" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <rect width="800" height="450" fill="url(#bg-conflict)" />
+  <rect width="800" height="450" fill="url(#glow-conflict)" />
+
+  <!-- fine dot-grid texture -->
+  <g fill="#A8B5C7" opacity="0.10">
+    <circle cx="60" cy="60" r="1.4" /><circle cx="120" cy="60" r="1.4" /><circle cx="180" cy="60" r="1.4" />
+    <circle cx="60" cy="120" r="1.4" /><circle cx="120" cy="120" r="1.4" /><circle cx="180" cy="120" r="1.4" />
+    <circle cx="60" cy="180" r="1.4" /><circle cx="120" cy="180" r="1.4" /><circle cx="180" cy="180" r="1.4" />
+    <circle cx="660" cy="330" r="1.4" /><circle cx="720" cy="330" r="1.4" /><circle cx="740" cy="390" r="1.4" />
+  </g>
+
+  <!-- two converging forms, not touching: negotiation / opposing positions -->
+  <g fill="none" stroke="#A8B5C7" stroke-width="1.5" opacity="0.55">
+    <path d="M -40 340 C 160 300, 300 260, 372 210" />
+    <path d="M -40 380 C 180 350, 320 300, 388 234" />
+  </g>
+  <g fill="none" stroke="#D4AF37" stroke-width="2" opacity="0.85">
+    <path d="M 840 120 C 620 150, 470 190, 404 224" />
+    <path d="M 840 80 C 600 110, 450 160, 388 214" />
+  </g>
+
+  <!-- rupture line at the point they do not meet -->
+  <g stroke="#D4AF37" stroke-width="1.5" opacity="0.7">
+    <line x1="396" y1="196" x2="384" y2="224" />
+    <line x1="384" y1="224" x2="400" y2="248" />
+  </g>
+
+  <!-- concentric arcs radiating softly from the gap -->
+  <g fill="none" stroke="#D4AF37" opacity="0.22">
+    <circle cx="392" cy="222" r="60" stroke-width="1" />
+    <circle cx="392" cy="222" r="110" stroke-width="1" />
+    <circle cx="392" cy="222" r="165" stroke-width="1" />
+  </g>
+</svg>

@@ -1,0 +1,35 @@
+<svg viewBox="0 0 800 450" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg-climate" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1B263B" />
+      <stop offset="60%" stop-color="#0D1B2A" />
+      <stop offset="100%" stop-color="#0D1B2A" />
+    </linearGradient>
+    <radialGradient id="sun-climate" cx="72%" cy="66%" r="45%">
+      <stop offset="0%" stop-color="#D4AF37" stop-opacity="0.5" />
+      <stop offset="100%" stop-color="#D4AF37" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <rect width="800" height="450" fill="url(#bg-climate)" />
+  <rect width="800" height="450" fill="url(#sun-climate)" />
+
+  <!-- rising sun / warmth arc -->
+  <circle cx="580" cy="330" r="70" fill="none" stroke="#D4AF37" stroke-width="2" opacity="0.85" />
+  <circle cx="580" cy="330" r="70" fill="#D4AF37" opacity="0.10" />
+
+  <!-- isotherm / horizon contour bands -->
+  <g fill="none" stroke="#A8B5C7" stroke-width="1.5" opacity="0.5">
+    <path d="M -40 300 C 160 260, 360 340, 560 280 S 780 240, 840 260" />
+    <path d="M -40 340 C 180 300, 380 380, 580 320 S 780 280, 840 300" />
+  </g>
+  <g fill="none" stroke="#D4AF37" stroke-width="1.5" opacity="0.4">
+    <path d="M -40 380 C 200 340, 420 420, 620 360 S 800 330, 840 340" />
+  </g>
+
+  <!-- fine dot texture, sky area -->
+  <g fill="#A8B5C7" opacity="0.10">
+    <circle cx="90" cy="70" r="1.4" /><circle cx="150" cy="70" r="1.4" /><circle cx="210" cy="70" r="1.4" />
+    <circle cx="90" cy="120" r="1.4" /><circle cx="150" cy="120" r="1.4" /><circle cx="210" cy="120" r="1.4" />
+  </g>
+</svg>

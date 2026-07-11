@@ -1,0 +1,37 @@
+<svg viewBox="0 0 800 450" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg-diplomacy" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0D1B2A" />
+      <stop offset="100%" stop-color="#1B263B" />
+    </linearGradient>
+    <radialGradient id="glow-diplomacy" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#D4AF37" stop-opacity="0.14" />
+      <stop offset="100%" stop-color="#D4AF37" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <rect width="800" height="450" fill="url(#bg-diplomacy)" />
+  <rect width="800" height="450" fill="url(#glow-diplomacy)" />
+
+  <!-- fine dot-grid texture -->
+  <g fill="#A8B5C7" opacity="0.10">
+    <circle cx="640" cy="80" r="1.4" /><circle cx="700" cy="80" r="1.4" /><circle cx="760" cy="80" r="1.4" />
+    <circle cx="640" cy="130" r="1.4" /><circle cx="700" cy="130" r="1.4" /><circle cx="760" cy="130" r="1.4" />
+    <circle cx="60" cy="370" r="1.4" /><circle cx="110" cy="370" r="1.4" /><circle cx="160" cy="370" r="1.4" />
+  </g>
+
+  <!-- two overlapping rings: dialogue / shared ground -->
+  <circle cx="358" cy="225" r="120" fill="none" stroke="#A8B5C7" stroke-width="1.75" opacity="0.6" />
+  <circle cx="452" cy="225" r="120" fill="none" stroke="#D4AF37" stroke-width="1.75" opacity="0.85" />
+
+  <!-- shared-ground lens, softly filled -->
+  <path d="M 405 112 A 120 120 0 0 1 405 338 A 120 120 0 0 1 405 112 Z" fill="#D4AF37" opacity="0.07" />
+
+  <!-- radiating dotted lines suggesting outward reach -->
+  <g stroke="#A8B5C7" stroke-width="1.25" stroke-dasharray="2 6" opacity="0.35">
+    <line x1="358" y1="105" x2="358" y2="20" />
+    <line x1="452" y1="105" x2="452" y2="20" />
+    <line x1="238" y1="225" x2="150" y2="225" />
+    <line x1="572" y1="225" x2="660" y2="225" />
+  </g>
+</svg>

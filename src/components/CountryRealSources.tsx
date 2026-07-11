@@ -118,9 +118,16 @@ export function CountryRealSources({ country, event, onBack }: CountryRealSource
                     <ExternalLinkIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
                   </a>
                 </div>
-                <span className="text-xs text-muted-foreground">
-                  {article.publisher} &middot; {formatRelativeOrDate(article.publishedAt)}
-                </span>
+                <div className="mt-0.5 flex items-center gap-1.5">
+                  <span className="text-xs text-muted-foreground">
+                    {article.publisher} &middot; {formatRelativeOrDate(article.publishedAt)}
+                  </span>
+                  {state.tier === "mentioning-country" && (
+                    <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+                      Mentions {country.name}
+                    </span>
+                  )}
+                </div>
               </li>
             ))}
           </ul>

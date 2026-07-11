@@ -29,10 +29,18 @@ export type CountrySourceArticle = {
 // the UI so it's never confused with real local press coverage.
 export type CoverageTier = "from-country" | "mentioning-country";
 
-async function fetchGNewsArticles(
+type RawGNewsArticle = {
+  title: string;
+  description: string;
+  url: string;
+  publishedAt: string;
+  source: { name: string };
+};
+
+async function fetchRawArticles(
   params: URLSearchParams,
   apiKey: string
-): Promise<CountrySourceArticle[]> {
+): Promise<RawGNewsArticle[]> {
   params.set("apikey", apiKey);
   try {
     const response = await fetch(`${GNEWS_ENDPOINT}?${params.toString()}`, {
@@ -40,18 +48,20 @@ async function fetchGNewsArticles(
       signal: AbortSignal.timeout(5000),
     });
     if (!response.ok) return [];
-    const data = (await response.json()) as {
-      articles?: Array<{ title: string; url: string; publishedAt: string; source: { name: string } }>;
-    };
-    return (data.articles ?? []).map((article) => ({
-      title: article.title,
-      url: article.url,
-      publisher: article.source.name,
-      publishedAt: article.publishedAt.slice(0, 10),
-    }));
+    const data = (await response.json()) as { articles?: RawGNewsArticle[] };
+    return data.articles ?? [];
   } catch {
     return [];
   }
+}
+
+function toCountrySourceArticle(article: RawGNewsArticle): CountrySourceArticle {
+  return {
+    title: article.title,
+    url: article.url,
+    publisher: article.source.name,
+    publishedAt: article.publishedAt.slice(0, 10),
+  };
 }
 
 function buildStrictParams(query: string, country: CountryCode): URLSearchParams {
@@ -95,16 +105,33 @@ export async function GET(request: Request) {
   // that it frequently matched zero articles in testing.
   const query = CATEGORY_QUERIES[event.category];
 
-  let articles = await fetchGNewsArticles(buildStrictParams(query, country), apiKey);
+  let rawArticles = await fetchRawArticles(buildStrictParams(query, country), apiKey);
   let tier: CoverageTier = "from-country";
 
-  if (articles.length === 0) {
+  if (rawArticles.length === 0) {
     const countryRecord = await getCountryByCode(country);
     if (countryRecord) {
-      articles = await fetchGNewsArticles(buildFallbackParams(query, countryRecord.name), apiKey);
+      const fallbackArticles = await fetchRawArticles(
+        buildFallbackParams(query, countryRecord.name),
+        apiKey
+      );
+      // GNews's full-text search matches the country name anywhere in the
+      // article (including body text), which surfaced weak, tangential
+      // hits in testing — e.g. an Australian outlet's Iran story that
+      // mentioned "Netherlands" once in passing, shown as if it were
+      // Dutch-relevant coverage. Requiring the name in the title or
+      // description (not just the indexed body) keeps only genuinely
+      // on-topic matches.
+      const nameLower = countryRecord.name.toLowerCase();
+      rawArticles = fallbackArticles.filter(
+        (article) =>
+          article.title.toLowerCase().includes(nameLower) ||
+          article.description?.toLowerCase().includes(nameLower)
+      );
       tier = "mentioning-country";
     }
   }
 
+  const articles = rawArticles.map(toCountrySourceArticle);
   return NextResponse.json({ articles, tier });
 }

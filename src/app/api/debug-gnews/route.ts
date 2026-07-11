@@ -12,7 +12,7 @@ export async function GET() {
   const url =
     "https://gnews.io/api/v4/search?" +
     new URLSearchParams({
-      q: "war OR ceasefire",
+      q: "\"ceasefire\" OR \"peace talks\" OR \"peace negotiations\"",
       lang: "en",
       max: "3",
       sortby: "publishedAt",

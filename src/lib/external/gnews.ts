@@ -4,17 +4,25 @@ const GNEWS_ENDPOINT = "https://gnews.io/api/v4/search";
 
 const ALL_COUNTRIES: CountryCode[] = ["NL", "US", "RU", "CN", "IN", "IR", "UA"];
 
-// One curated query per fixed app category. GNews has no concept of these
-// categories, so category assignment happens at query time rather than by
-// classifying an unfiltered feed after the fact. Only quoted multi-word
-// phrases are used (no bare single words like "war" or "sanctions") since
-// those false-positive heavily on unrelated content — e.g. entertainment
-// articles that merely mention a historical war.
-const CATEGORY_QUERIES: Record<EventCategory, string> = {
-  conflict: "\"ceasefire\" OR \"peace talks\" OR \"peace negotiations\"",
-  climate: "\"climate summit\" OR \"emissions agreement\" OR \"climate talks\"",
-  diplomacy: "\"nuclear talks\" OR \"diplomatic negotiations\" OR \"nuclear negotiations\"",
+// Phrases used to classify a fetched article into one of the app's fixed
+// categories. Only quoted multi-word phrases are used (no bare single
+// words like "war" or "sanctions") since those false-positive heavily on
+// unrelated content — e.g. entertainment articles that merely mention a
+// historical war.
+const CATEGORY_PHRASES: Record<EventCategory, string[]> = {
+  conflict: ["ceasefire", "peace talks", "peace negotiations"],
+  climate: ["climate summit", "emissions agreement", "climate talks"],
+  diplomacy: ["nuclear talks", "diplomatic negotiations", "nuclear negotiations"],
 };
+
+// A single combined query covering every category's phrases. GNews's free
+// plan rate-limits concurrent requests (firing one request per category in
+// parallel returned 429s in testing), so all categories are resolved from
+// one API call and then bucketed client-side by matching phrase.
+const COMBINED_QUERY = Object.values(CATEGORY_PHRASES)
+  .flat()
+  .map((phrase) => `"${phrase}"`)
+  .join(" OR ");
 
 type GNewsArticle = {
   title: string;
@@ -35,6 +43,14 @@ function slugify(value: string): string {
     .replace(/(^-|-$)/g, "");
 }
 
+function categoryForArticle(article: GNewsArticle): EventCategory | undefined {
+  const haystack = `${article.title} ${article.description}`.toLowerCase();
+  const category = (Object.keys(CATEGORY_PHRASES) as EventCategory[]).find((candidate) =>
+    CATEGORY_PHRASES[candidate].some((phrase) => haystack.includes(phrase))
+  );
+  return category;
+}
+
 function mapArticleToEvent(article: GNewsArticle, category: EventCategory): Event {
   // GNews doesn't report the source's country, so availability can't be
   // narrowed from the article the way GDELT's sourcecountry allowed —
@@ -51,15 +67,14 @@ function mapArticleToEvent(article: GNewsArticle, category: EventCategory): Even
   };
 }
 
-async function fetchGNewsCategory(
-  category: EventCategory,
+async function fetchGNewsArticles(
   apiKey: string,
   options?: GNewsFetchOptions
 ): Promise<GNewsArticle[]> {
   const params = new URLSearchParams({
-    q: CATEGORY_QUERIES[category],
+    q: COMBINED_QUERY,
     lang: "en",
-    max: "3",
+    max: "10",
     // The free GNews plan strips articles older than 30 days from the
     // response ("historical data"). Sorting by relevance can surface an
     // old article that gets silently removed, leaving an empty result —
@@ -85,24 +100,18 @@ export async function fetchLiveEvents(options?: GNewsFetchOptions): Promise<Even
   const apiKey = process.env.GNEWS_API_KEY;
   if (!apiKey) return [];
 
-  const categories: EventCategory[] = ["conflict", "climate", "diplomacy"];
-  const results = await Promise.all(
-    categories.map((category) => fetchGNewsCategory(category, apiKey, options))
-  );
+  const articles = await fetchGNewsArticles(apiKey, options);
 
   const events: Event[] = [];
-  const seenIds = new Set<string>();
+  const seenCategories = new Set<EventCategory>();
 
-  results.forEach((articles, index) => {
-    const category = categories[index];
-    const topArticle = articles[0];
-    if (!topArticle) return;
+  for (const article of articles) {
+    const category = categoryForArticle(article);
+    if (!category || seenCategories.has(category)) continue;
 
-    const event = mapArticleToEvent(topArticle, category);
-    if (seenIds.has(event.id)) return;
-    seenIds.add(event.id);
-    events.push(event);
-  });
+    seenCategories.add(category);
+    events.push(mapArticleToEvent(article, category));
+  }
 
   return events;
 }

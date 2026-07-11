@@ -88,12 +88,15 @@ export async function fetchLiveEvents(options?: GNewsFetchOptions): Promise<Even
   const categories: EventCategory[] = ["conflict", "climate", "diplomacy"];
   const events: Event[] = [];
 
-  // Sequential, not Promise.all: firing all 3 category requests
-  // concurrently hit GNews's free-tier rate limit (429s on 2 of 3
-  // requests in testing), silently dropping categories. One at a time
-  // stays under that limit at the cost of a bit more latency (well
-  // within the request's overall timeout budget).
-  for (const category of categories) {
+  // Sequential with a spacing delay, not Promise.all: GNews's free-tier
+  // rate limit blocks requests fired within the same short window
+  // regardless of concurrency — even back-to-back sequential calls
+  // (~20ms apart) were rejected with 429 "too many requests... in a
+  // short period of time" in testing. A ~1.1s gap between calls stays
+  // under that limit; this whole loop only runs once per hour anyway
+  // (see the revalidate option passed in from src/lib/data/events.ts).
+  for (const [index, category] of categories.entries()) {
+    if (index > 0) await new Promise((resolve) => setTimeout(resolve, 1100));
     const articles = await fetchGNewsCategory(category, apiKey, options);
     const topArticle = articles[0];
     if (topArticle) events.push(mapArticleToEvent(topArticle, category));

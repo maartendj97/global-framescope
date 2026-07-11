@@ -22,6 +22,7 @@ type GNewsArticle = {
   title: string;
   description: string;
   url: string;
+  image: string | null;
   publishedAt: string;
   source: { name: string; url: string };
 };
@@ -50,6 +51,7 @@ function mapArticleToEvent(article: GNewsArticle, category: EventCategory): Even
     summary: article.description || article.title,
     context: `Reported by ${article.source.name}. Full coverage available via the original source.`,
     availableCountries: ALL_COUNTRIES,
+    imageUrl: article.image || undefined,
   };
 }
 

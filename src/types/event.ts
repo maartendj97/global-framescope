@@ -10,4 +10,8 @@ export interface Event {
   summary: string;
   context: string;
   availableCountries: CountryCode[];
+  // Present for real (GNews-fetched) events when the source article
+  // included a thumbnail; absent for mock events, which always use the
+  // category illustration instead.
+  imageUrl?: string;
 }

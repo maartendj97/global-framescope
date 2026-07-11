@@ -5,7 +5,12 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import type { Country, CountryFraming, Event, KeyDifference, Source } from "@/types";
 import { BackIcon } from "./icons";
-import { CATEGORY_IMAGES, CATEGORY_LABELS, formatEventDate } from "@/lib/eventDisplay";
+import {
+  CATEGORY_LABELS,
+  formatEventDate,
+  getEventImageSrc,
+  isExternalEventImage,
+} from "@/lib/eventDisplay";
 import { CountriesTab } from "./CountriesTab";
 import { DifferencesTable } from "./DifferencesTable";
 import { SourcesTab } from "./SourcesTab";
@@ -53,11 +58,12 @@ export function EventDetailView({
 
       <div className="relative mt-4 aspect-video w-full overflow-hidden rounded-2xl">
         <Image
-          src={CATEGORY_IMAGES[event.category]}
+          src={getEventImageSrc(event)}
           alt=""
           fill
           className="object-cover"
           sizes="(min-width: 768px) 960px, 100vw"
+          unoptimized={isExternalEventImage(event)}
           priority
         />
       </div>

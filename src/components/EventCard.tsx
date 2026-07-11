@@ -2,7 +2,12 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Country, Event } from "@/types";
 import { ChevronRightIcon } from "./icons";
-import { CATEGORY_LABELS, CATEGORY_IMAGES, formatEventDate } from "@/lib/eventDisplay";
+import {
+  CATEGORY_LABELS,
+  formatEventDate,
+  getEventImageSrc,
+  isExternalEventImage,
+} from "@/lib/eventDisplay";
 
 type EventCardProps = {
   event: Event;
@@ -54,11 +59,12 @@ export function EventCard({
       >
         <div className="relative aspect-video w-full overflow-hidden rounded-2xl">
           <Image
-            src={CATEGORY_IMAGES[event.category]}
+            src={getEventImageSrc(event)}
             alt=""
             fill
             className="object-cover"
             sizes="(min-width: 768px) 600px, 100vw"
+            unoptimized={isExternalEventImage(event)}
             priority
           />
         </div>
@@ -81,11 +87,12 @@ export function EventCard({
     >
       <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl">
         <Image
-          src={CATEGORY_IMAGES[event.category]}
+          src={getEventImageSrc(event)}
           alt=""
           fill
           className="object-cover"
           sizes="64px"
+          unoptimized={isExternalEventImage(event)}
         />
       </div>
       <div className="min-w-0 flex-1 space-y-1">

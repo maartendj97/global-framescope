@@ -1,4 +1,4 @@
-import type { EventCategory } from "@/types";
+import type { Event, EventCategory } from "@/types";
 
 export const CATEGORY_LABELS: Record<EventCategory, string> = {
   conflict: "Conflict",
@@ -14,6 +14,19 @@ export const CATEGORY_IMAGES: Record<EventCategory, string> = {
   climate: "/images/events/climate.svg",
   diplomacy: "/images/events/diplomacy.svg",
 };
+
+// Real events carry the source article's own thumbnail when GNews
+// provided one; mock events (and real events without one) fall back to
+// the category illustration. External thumbnails come from arbitrary
+// news domains, so they're rendered unoptimized rather than requiring
+// an allowlist of every possible publisher hostname.
+export function getEventImageSrc(event: Event): string {
+  return event.imageUrl ?? CATEGORY_IMAGES[event.category];
+}
+
+export function isExternalEventImage(event: Event): boolean {
+  return Boolean(event.imageUrl);
+}
 
 export function formatEventDate(isoDate: string): string {
   return new Intl.DateTimeFormat("en-GB", {

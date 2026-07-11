@@ -69,7 +69,14 @@ export function CountryRealSources({ country, event, onBack }: CountryRealSource
         </div>
 
         {state.status === "loading" && (
-          <p className="text-sm text-muted-foreground">Loading real coverage&hellip;</p>
+          <ul className="space-y-3" aria-label="Loading real coverage" aria-busy="true">
+            {[0, 1, 2].map((index) => (
+              <li key={index} className="animate-pulse space-y-2">
+                <div className="h-4 w-[85%] rounded bg-surface-secondary" />
+                <div className="h-3 w-1/3 rounded bg-surface-secondary" />
+              </li>
+            ))}
+          </ul>
         )}
 
         {state.status === "error" && (

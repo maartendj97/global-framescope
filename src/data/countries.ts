@@ -8,4 +8,5 @@ export const countries: Country[] = [
   { code: "IN", name: "India", flagEmoji: "🇮🇳" },
   { code: "IR", name: "Iran", flagEmoji: "🇮🇷" },
   { code: "UA", name: "Ukraine", flagEmoji: "🇺🇦" },
+  { code: "DE", name: "Germany", flagEmoji: "🇩🇪" },
 ];

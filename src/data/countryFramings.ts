@@ -105,6 +105,20 @@ export const countryFramings: CountryFraming[] = [
     omitted: ["Direct engagement with Ukrainian perspective"],
     sourceIds: ["ru-ua-ceasefire-talks-ir"],
   },
+  {
+    eventId: "ru-ua-ceasefire-talks",
+    countryCode: "DE",
+    mainFrame: "Energy Security & Alliance Support",
+    toneCategory: "cautious",
+    mainNarrative:
+      "Coverage frames the talks through Germany's dual role as a leading military and financial supporter of Ukraine and a nation still managing the economic fallout of its shift away from Russian energy supplies.",
+    keyEmphasis: ["Continued military and financial support for Ukraine", "Energy diversification", "Coordination within NATO and the EU"],
+    tone: "Measured, balancing solidarity with economic caution",
+    terminology: ["\"Russian aggression\"", "\"Zeitenwende\"", "\"energy diversification\""],
+    highlighted: ["Germany's role as a leading arms and financial supporter", "Progress on energy diversification"],
+    omitted: ["Domestic debate over the economic cost of continued support"],
+    sourceIds: ["ru-ua-ceasefire-talks-de"],
+  },
 
   // Global Climate Summit Reaches Emissions Agreement
   {
@@ -205,6 +219,20 @@ export const countryFramings: CountryFraming[] = [
     omitted: ["Near-term energy security constraints"],
     sourceIds: ["global-climate-emissions-agreement-ua"],
   },
+  {
+    eventId: "global-climate-emissions-agreement",
+    countryCode: "DE",
+    mainFrame: "Industrial Transition",
+    toneCategory: "supportive",
+    mainNarrative:
+      "Coverage frames the agreement as validating Germany's long-running energy transition, while raising questions about protecting domestic industry from competitiveness pressures during implementation.",
+    keyEmphasis: ["Energy transition as a model", "Industrial competitiveness safeguards", "EU-wide implementation coordination"],
+    tone: "Supportive, tempered by industrial policy concerns",
+    terminology: ["\"Energiewende\"", "\"carbon leakage\"", "\"green industrial policy\""],
+    highlighted: ["Germany's renewable energy expansion", "Calls for a level playing field for industry"],
+    omitted: ["Delays in Germany's own emissions targets"],
+    sourceIds: ["global-climate-emissions-agreement-de"],
+  },
 
   // Iran Nuclear Program Negotiations Resume
   {
@@ -304,5 +332,19 @@ export const countryFramings: CountryFraming[] = [
     highlighted: ["Parallels to other multilateral negotiations"],
     omitted: ["Direct assessment of Iran's nuclear program specifics"],
     sourceIds: ["iran-nuclear-negotiations-ua"],
+  },
+  {
+    eventId: "iran-nuclear-negotiations",
+    countryCode: "DE",
+    mainFrame: "E3 Diplomatic Legacy",
+    toneCategory: "cautious",
+    mainNarrative:
+      "Coverage frames Germany's involvement through its long-standing role as one of the original European negotiators of Iran's nuclear program, emphasizing continuity of that diplomatic track.",
+    keyEmphasis: ["E3 negotiating legacy", "Verification and compliance mechanisms", "Coordination with European partners"],
+    tone: "Cautious, emphasizing continuity and verification",
+    terminology: ["\"E3 talks\"", "\"verification regime\"", "\"diplomatic continuity\""],
+    highlighted: ["Germany's historical role in prior nuclear agreements", "Coordination with France and the UK"],
+    omitted: ["Domestic debate over sanctions relief timing"],
+    sourceIds: ["iran-nuclear-negotiations-de"],
   },
 ];

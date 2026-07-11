@@ -145,7 +145,7 @@ Event Detail is reached through event cards and is not a navigation tab.
 
 **Event presentation**: a "Today's major events" featured card (larger, can be part of a swipeable set if more than one is featured), followed by an "Other events" section with a "View all" link to the Events page and the remaining events as more compact rows. Cards use calm editorial images or local placeholder visuals with a consistent aspect ratio (16:9 or 3:2 preferred).
 
-**Event card anatomy**: image; category and date row; event title; concise summary; compact country-indicator row for the seven countries; source count and/or update metadata; a clear chevron/arrow/click affordance. Do not show country framing detail on the card.
+**Event card anatomy**: image; category and date row; event title; concise summary; compact country-indicator row for the eight countries; source count and/or update metadata; a clear chevron/arrow/click affordance. Do not show country framing detail on the card.
 
 ## Events page UI
 
@@ -155,15 +155,15 @@ Clear page title ("Events") with a search icon in the header; compact list or ca
 
 Event Detail is a tabbed screen, not one long scroll. Top row: back button, optional share action. Below: event image; category/region/type tag chips; event title; published date; then a tab bar with 4 tabs — **Overview, Countries, Differences, Sources**.
 
-**Overview tab**: neutral summary; broader context card/section; a **Countries included** preview grid (flag + name for all 7, non-interactive — the entry point into a country's framing is the Countries tab, not this grid).
+**Overview tab**: neutral summary; broader context card/section; a **Countries included** preview grid (flag + name for all 8, non-interactive — the entry point into a country's framing is the Countries tab, not this grid).
 
-**Countries tab**: all 7 countries as rows, not chips — flag, country name, a short one-line main-frame label, a tone badge, and a chevron, under the heading "Choose a country to view its perspective." Tone badges use restrained, distinct colors per category (see [Tone badge colors](#tone-badge-colors)) — e.g. Concerned, Cautious, Critical, Neutral, Balanced, Supportive. Tapping a row opens the Country Perspective view, not an inline expansion.
+**Countries tab**: all 8 countries as rows, not chips — flag, country name, a short one-line main-frame label, a tone badge, and a chevron, under the heading "Choose a country to view its perspective." Tone badges use restrained, distinct colors per category (see [Tone badge colors](#tone-badge-colors)) — e.g. Concerned, Cautious, Critical, Neutral, Balanced, Supportive. Tapping a row opens the Country Perspective view, not an inline expansion.
 
 **Country Perspective** (opened from a Countries-tab row, own back navigation, optional share action): country header (flag + name) and a tone badge; **Main frame** (short label) and a fuller **narrative summary**; **Key focus** bullet points; a two-column **Emphasized** / **Downplayed** comparison (maps to the `highlighted` / `omitted` framing fields — Emphasized in restrained green, Downplayed in restrained red/rose, never color-alone); **Sources used** for this country's framing (publisher mark, name, published date, external-link icon). Use progressive hierarchy, not a wall of equally weighted text.
 
 ## Key Differences UI
 
-The Differences tab shows a compact **comparison table**, not stacked cards (see the note in [Design character](#design-character)): one row per country (all 7); columns for Country (flag + name), Main frame, and Tone (as a colored badge, same palette as the Countries tab). The table scrolls horizontally *within its own container* if it doesn't fit the viewport — the page itself must never scroll horizontally. Keep row text short (a phrase, not a paragraph); link out to the Country Perspective view for the full narrative rather than repeating it here.
+The Differences tab shows a compact **comparison table**, not stacked cards (see the note in [Design character](#design-character)): one row per country (all 8); columns for Country (flag + name), Main frame, and Tone (as a colored badge, same palette as the Countries tab). The table scrolls horizontally *within its own container* if it doesn't fit the viewport — the page itself must never scroll horizontally. Keep row text short (a phrase, not a paragraph); link out to the Country Perspective view for the full narrative rather than repeating it here.
 
 ### Tone badge colors
 

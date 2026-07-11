@@ -56,7 +56,7 @@ Domain types (`Event`, `CountryFraming`, `Source`, `Country`, etc.) live in `src
 The fixed MVP country list (see [MVP_SPEC.md](MVP_SPEC.md#fixed-mvp-countries)) should not be hardcoded into UI components. Model it so that:
 
 - the full country list is defined once (e.g. a `Country[]` constant or type),
-- each event can reference a subset of countries (event-specific availability), rather than assuming every event has framing for all 7 countries.
+- each event can reference a subset of countries (event-specific availability), rather than assuming every event has framing for all 8 countries.
 
 ## What not to build yet
 

@@ -6,7 +6,7 @@ Product source of truth. If in doubt about *what* to build, this file wins over 
 
 Global FrameScope is a mobile-first application that lets users compare how the same major international event is framed by media perspectives from different countries.
 
-**Tagline:** "One event. Multiple countries. Many perspectives. You decide."
+**Tagline:** "One event, viewed through multiple national perspectives."
 
 It is an **analysis and comparison product**, not a traditional daily-news application. Users primarily consume:
 
@@ -47,7 +47,7 @@ Included:
 - Country selection and framing-detail interaction
 - Key Differences section
 - Light theme and dark theme
-- Three illustrative international events, all seven fixed MVP countries on every event
+- Three illustrative international events, all eight fixed MVP countries on every event
 - TypeScript domain model, mock data, and data-access layer (done — see [ARCHITECTURE.md](ARCHITECTURE.md))
 
 Explicitly **excluded** from Phase 1:
@@ -106,7 +106,7 @@ Purpose: immediately explain the product and surface the main analyses.
 - Global FrameScope branding
 - Intro line: "Compare international framing, country by country"
 - A featured "Today's major events" card, followed by an "Other events" section (compact rows + a "View all" link to the Events page)
-- Event cards show: image, category and date, title, concise summary, visible country indicators for the seven countries, source count and/or updated info, and a clear affordance to open Event Detail
+- Event cards show: image, category and date, title, concise summary, visible country indicators for the eight countries, source count and/or updated info, and a clear affordance to open Event Detail
 - Do not show detailed country framing directly on Home cards
 - Mobile bottom navigation
 
@@ -125,8 +125,8 @@ Purpose: show the complete event catalogue.
 
 This is the central MVP experience. It is a **tabbed** screen — Overview, Countries, Differences, Sources — not one long scrolling page.
 
-1. **Overview tab** (default): back navigation, event image, category/region/type tags, event title, published date, neutral summary, broader event context, and a non-interactive "Countries included" preview grid of all seven countries.
-2. **Countries tab**: all seven countries listed as rows (flag, name, one-line main-frame label, tone badge). Tapping a row opens a full **Country Perspective** view for that country.
+1. **Overview tab** (default): back navigation, event image, category/region/type tags, event title, published date, neutral summary, broader event context, and a non-interactive "Countries included" preview grid of all eight countries.
+2. **Countries tab**: all eight countries listed as rows (flag, name, one-line main-frame label, tone badge). Tapping a row opens a full **Country Perspective** view for that country.
 3. **Differences tab**: a comparison table, one row per country, with Main frame and Tone columns.
 4. **Sources tab**: all sources cited anywhere in this event's analysis.
 
@@ -151,8 +151,9 @@ Fixed base set for MVP (do not add/remove without a product decision):
 - India
 - Iran
 - Ukraine
+- Germany
 
-Architecture should allow the available country set to become event-specific later (i.e. not every event needs all 7).
+Architecture should allow the available country set to become event-specific later (i.e. not every event needs all 8).
 
 ## Country framing structure
 
@@ -205,7 +206,7 @@ Mobile-first, premium editorial character (calm, rounded, high-contrast light/da
 - Bottom navigation works and highlights the active tab
 - Home and Events use the data-access layer
 - Each event opens the correct Event Detail page
-- All seven countries are visible on every event
+- All eight countries are visible on every event
 - No framing details are shown until a country is selected
 - Only one country's framing is shown at a time
 - Key Differences are readable on a small mobile screen

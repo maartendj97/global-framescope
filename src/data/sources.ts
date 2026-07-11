@@ -69,6 +69,15 @@ export const sources: Source[] = [
     sourceType: "state-media",
     publishedAt: "2026-05-15",
   },
+  {
+    id: "ru-ua-ceasefire-talks-de",
+    eventId: "ru-ua-ceasefire-talks",
+    title: "Germany Balances Ukraine Support With Energy Security Concerns",
+    publisher: "Berlin Tageszeitung",
+    countryCode: "DE",
+    sourceType: "newspaper",
+    publishedAt: "2026-05-13",
+  },
 
   // Global Climate Summit Reaches Emissions Agreement
   {
@@ -134,6 +143,15 @@ export const sources: Source[] = [
     sourceType: "online",
     publishedAt: "2026-04-06",
   },
+  {
+    id: "global-climate-emissions-agreement-de",
+    eventId: "global-climate-emissions-agreement",
+    title: "German Officials Tie Climate Deal to Energiewende Legacy",
+    publisher: "Berlin Tageszeitung",
+    countryCode: "DE",
+    sourceType: "newspaper",
+    publishedAt: "2026-04-04",
+  },
 
   // Iran Nuclear Program Negotiations Resume
   {
@@ -198,5 +216,14 @@ export const sources: Source[] = [
     countryCode: "UA",
     sourceType: "online",
     publishedAt: "2026-06-23",
+  },
+  {
+    id: "iran-nuclear-negotiations-de",
+    eventId: "iran-nuclear-negotiations",
+    title: "Berlin Highlights E3 Legacy as Iran Talks Resume",
+    publisher: "Berlin Tageszeitung",
+    countryCode: "DE",
+    sourceType: "newspaper",
+    publishedAt: "2026-06-21",
   },
 ];

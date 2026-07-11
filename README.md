@@ -1,6 +1,6 @@
 # Global FrameScope
 
-**One event. Multiple countries. Many perspectives. You decide.**
+**One event, viewed through multiple national perspectives.**
 
 Global FrameScope is a mobile-first application for comparing how the same major international event is framed by media across different countries — neutral event context, country-specific framing analysis, terminology/tone differences, and links to original sources. It's an analysis and comparison tool, not a news reader.
 

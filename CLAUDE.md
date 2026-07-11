@@ -2,7 +2,7 @@
 
 # Global FrameScope
 
-Mobile-first app for comparing how the same major international event is framed by media across different countries. Tagline: "One event. Multiple countries. Many perspectives. You decide." Analysis/comparison tool, not a news reader.
+Mobile-first app for comparing how the same major international event is framed by media across different countries. Tagline: "One event, viewed through multiple national perspectives." Analysis/comparison tool, not a news reader.
 
 Currently in **Phase 1** (UI + mock data only — no DB, external APIs, AI, or auth yet).
 

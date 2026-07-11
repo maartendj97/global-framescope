@@ -30,6 +30,9 @@ export default function AboutPage() {
   return (
     <div className="mx-auto w-full max-w-md px-4 pt-8 pb-4 md:max-w-[960px]">
       <h1 className="font-serif text-2xl text-foreground">About</h1>
+      <p className="mt-2 text-sm text-muted-foreground">
+        One event, viewed through multiple national perspectives.
+      </p>
       <div className="mt-4 space-y-3">
         {SECTIONS.map((section) => (
           <div

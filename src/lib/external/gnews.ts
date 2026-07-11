@@ -2,7 +2,7 @@ import type { CountryCode, Event, EventCategory } from "@/types";
 
 const GNEWS_ENDPOINT = "https://gnews.io/api/v4/search";
 
-const ALL_COUNTRIES: CountryCode[] = ["NL", "US", "RU", "CN", "IN", "IR", "UA"];
+const ALL_COUNTRIES: CountryCode[] = ["NL", "US", "RU", "CN", "IN", "IR", "UA", "DE"];
 
 // One curated query per fixed app category. GNews has no concept of these
 // categories, so category assignment happens at query time rather than by

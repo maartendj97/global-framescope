@@ -6,7 +6,7 @@ import type { CountryCode, Event } from "@/types";
  * real reporting, real quotations, or real editorial positions.
  */
 
-const ALL_COUNTRIES: CountryCode[] = ["NL", "US", "RU", "CN", "IN", "IR", "UA"];
+const ALL_COUNTRIES: CountryCode[] = ["NL", "US", "RU", "CN", "IN", "IR", "UA", "DE"];
 
 export const events: Event[] = [
   {

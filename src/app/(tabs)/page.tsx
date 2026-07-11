@@ -18,6 +18,9 @@ export default async function HomePage() {
       <h1 className="mt-2 font-serif text-3xl leading-tight text-foreground">
         Compare international framing, country by country
       </h1>
+      <p className="mt-2 text-sm text-muted-foreground">
+        One event, viewed through multiple national perspectives.
+      </p>
 
       {featuredEvent && (
         <section className="mt-8">

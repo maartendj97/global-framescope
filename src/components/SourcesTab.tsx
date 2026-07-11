@@ -18,6 +18,23 @@ type SourcesTabProps = {
 export function SourcesTab({ sources, countries }: SourcesTabProps) {
   const countryByCode = new Map(countries.map((country) => [country.code, country]));
 
+  if (sources.length === 0) {
+    return (
+      <div>
+        <h3 className="text-sm font-semibold text-foreground">
+          All sources cited in this analysis
+        </h3>
+        <div className="mt-3 rounded-2xl border border-border bg-surface p-4">
+          <p className="text-sm text-muted-foreground">
+            There&rsquo;s no curated source list for this event yet. Open the
+            Countries tab and pick a country to see real, current coverage from
+            that country&rsquo;s press instead.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <h3 className="text-sm font-semibold text-foreground">

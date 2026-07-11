@@ -12,7 +12,7 @@ const ALL_COUNTRIES: CountryCode[] = ["NL", "US", "RU", "CN", "IN", "IR", "UA", 
 // phrases are used (no bare single words like "war" or "sanctions") since
 // those false-positive heavily on unrelated content — e.g. entertainment
 // articles that merely mention a historical war.
-const CATEGORY_QUERIES: Record<EventCategory, string> = {
+export const CATEGORY_QUERIES: Record<EventCategory, string> = {
   conflict: "\"ceasefire\" OR \"peace talks\" OR \"peace negotiations\"",
   climate: "\"climate summit\" OR \"emissions agreement\" OR \"climate talks\"",
   diplomacy: "\"nuclear talks\" OR \"diplomatic negotiations\" OR \"nuclear negotiations\"",

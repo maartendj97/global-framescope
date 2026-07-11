@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getEventById } from "@/lib/data";
+import { CATEGORY_QUERIES } from "@/lib/external/gnews";
 import type { CountryCode } from "@/types";
 
 const GNEWS_ENDPOINT = "https://gnews.io/api/v4/search";
@@ -71,6 +72,11 @@ export async function GET(request: Request) {
   const event = await getEventById(eventId);
   if (!event) return NextResponse.json({ articles: [] }, { status: 404 });
 
-  const articles = await fetchCountryArticles(event.title, country, apiKey);
+  // Reuse the same category phrase query that reliably surfaced the main
+  // event in the first place, rather than the exact article headline —
+  // the full headline combined with a country filter is narrow enough
+  // that it frequently matched zero articles in testing.
+  const query = CATEGORY_QUERIES[event.category];
+  const articles = await fetchCountryArticles(query, country, apiKey);
   return NextResponse.json({ articles });
 }

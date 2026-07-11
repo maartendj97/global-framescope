@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import type { Country, Event } from "@/types";
 import { BackIcon, ExternalLinkIcon } from "./icons";
-import { formatEventDate } from "@/lib/eventDisplay";
+import { formatRelativeOrDate } from "@/lib/eventDisplay";
 import type { CountrySourceArticle, CoverageTier } from "@/app/api/country-sources/route";
 
 type CountryRealSourcesProps = {
@@ -128,11 +128,17 @@ export function CountryRealSources({ country, event, onBack }: CountryRealSource
                   </a>
                 </div>
                 <span className="text-xs text-muted-foreground">
-                  {article.publisher} &middot; {formatEventDate(article.publishedAt)}
+                  {article.publisher} &middot; {formatRelativeOrDate(article.publishedAt)}
                 </span>
               </li>
             ))}
           </ul>
+        )}
+
+        {state.status === "loaded" && (
+          <p className="text-xs text-muted-foreground">
+            Coverage results may be cached for up to 24 hours.
+          </p>
         )}
       </div>
     </div>

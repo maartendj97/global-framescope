@@ -22,3 +22,17 @@ export function formatEventDate(isoDate: string): string {
     year: "numeric",
   }).format(new Date(isoDate));
 }
+
+// "Today"/"Yesterday"/"N days ago" for recent dates, falling back to the
+// full formatted date once it's old enough that relative phrasing stops
+// being more useful than the date itself.
+export function formatRelativeOrDate(isoDate: string): string {
+  const daysAgo = Math.floor(
+    (Date.now() - new Date(isoDate).getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  if (daysAgo <= 0) return "Today";
+  if (daysAgo === 1) return "Yesterday";
+  if (daysAgo < 7) return `${daysAgo} days ago`;
+  return formatEventDate(isoDate);
+}

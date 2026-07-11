@@ -14,8 +14,8 @@ export async function GET() {
     new URLSearchParams({
       q: "war OR ceasefire",
       lang: "en",
-      max: "1",
-      sortby: "relevance",
+      max: "3",
+      sortby: "publishedAt",
       apikey: apiKey,
     });
 

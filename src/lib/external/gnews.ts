@@ -56,8 +56,12 @@ async function fetchGNewsCategory(
   const params = new URLSearchParams({
     q: CATEGORY_QUERIES[category],
     lang: "en",
-    max: "1",
-    sortby: "relevance",
+    max: "3",
+    // The free GNews plan strips articles older than 30 days from the
+    // response ("historical data"). Sorting by relevance can surface an
+    // old article that gets silently removed, leaving an empty result —
+    // sorting by recency keeps results inside the free-tier window.
+    sortby: "publishedAt",
     apikey: apiKey,
   });
 

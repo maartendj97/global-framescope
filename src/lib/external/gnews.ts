@@ -1,0 +1,101 @@
+import type { CountryCode, Event, EventCategory } from "@/types";
+
+const GNEWS_ENDPOINT = "https://gnews.io/api/v4/search";
+
+const ALL_COUNTRIES: CountryCode[] = ["NL", "US", "RU", "CN", "IN", "IR", "UA"];
+
+// One curated query per fixed app category. GNews has no concept of these
+// categories, so category assignment happens at query time rather than by
+// classifying an unfiltered feed after the fact.
+const CATEGORY_QUERIES: Record<EventCategory, string> = {
+  conflict: "war OR ceasefire OR \"peace talks\"",
+  climate: "\"climate summit\" OR \"emissions agreement\" OR \"climate talks\"",
+  diplomacy: "\"nuclear talks\" OR \"diplomatic negotiations\" OR sanctions",
+};
+
+type GNewsArticle = {
+  title: string;
+  description: string;
+  url: string;
+  publishedAt: string;
+  source: { name: string; url: string };
+};
+
+type GNewsFetchOptions = {
+  next?: { revalidate?: number; tags?: string[] };
+};
+
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+function mapArticleToEvent(article: GNewsArticle, category: EventCategory): Event {
+  // GNews doesn't report the source's country, so availability can't be
+  // narrowed from the article the way GDELT's sourcecountry allowed —
+  // falls back to all 7, same as the mock data. Harmless since Sources
+  // and CountryFraming remain mock/curated regardless.
+  return {
+    id: `${category}-${slugify(article.source.name)}-${article.publishedAt.slice(0, 10)}`,
+    title: article.title,
+    category,
+    date: article.publishedAt.slice(0, 10),
+    summary: article.description || article.title,
+    context: `Reported by ${article.source.name}. Full coverage available via the original source.`,
+    availableCountries: ALL_COUNTRIES,
+  };
+}
+
+async function fetchGNewsCategory(
+  category: EventCategory,
+  apiKey: string,
+  options?: GNewsFetchOptions
+): Promise<GNewsArticle[]> {
+  const params = new URLSearchParams({
+    q: CATEGORY_QUERIES[category],
+    lang: "en",
+    max: "1",
+    sortby: "relevance",
+    apikey: apiKey,
+  });
+
+  try {
+    const response = await fetch(`${GNEWS_ENDPOINT}?${params.toString()}`, {
+      next: options?.next,
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!response.ok) return [];
+    const data = (await response.json()) as { articles?: GNewsArticle[] };
+    return data.articles ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchLiveEvents(options?: GNewsFetchOptions): Promise<Event[]> {
+  const apiKey = process.env.GNEWS_API_KEY;
+  if (!apiKey) return [];
+
+  const categories: EventCategory[] = ["conflict", "climate", "diplomacy"];
+  const results = await Promise.all(
+    categories.map((category) => fetchGNewsCategory(category, apiKey, options))
+  );
+
+  const events: Event[] = [];
+  const seenIds = new Set<string>();
+
+  results.forEach((articles, index) => {
+    const category = categories[index];
+    const topArticle = articles[0];
+    if (!topArticle) return;
+
+    const event = mapArticleToEvent(topArticle, category);
+    if (seenIds.has(event.id)) return;
+    seenIds.add(event.id);
+    events.push(event);
+  });
+
+  return events;
+}

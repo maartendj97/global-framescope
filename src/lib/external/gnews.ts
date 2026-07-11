@@ -4,25 +4,17 @@ const GNEWS_ENDPOINT = "https://gnews.io/api/v4/search";
 
 const ALL_COUNTRIES: CountryCode[] = ["NL", "US", "RU", "CN", "IN", "IR", "UA"];
 
-// Phrases used to classify a fetched article into one of the app's fixed
-// categories. Only quoted multi-word phrases are used (no bare single
-// words like "war" or "sanctions") since those false-positive heavily on
-// unrelated content — e.g. entertainment articles that merely mention a
-// historical war.
-const CATEGORY_PHRASES: Record<EventCategory, string[]> = {
-  conflict: ["ceasefire", "peace talks", "peace negotiations"],
-  climate: ["climate summit", "emissions agreement", "climate talks"],
-  diplomacy: ["nuclear talks", "diplomatic negotiations", "nuclear negotiations"],
+// One curated query per fixed app category. GNews has no concept of these
+// categories, so category assignment happens at query time rather than by
+// classifying an unfiltered feed after the fact. Only quoted multi-word
+// phrases are used (no bare single words like "war" or "sanctions") since
+// those false-positive heavily on unrelated content — e.g. entertainment
+// articles that merely mention a historical war.
+const CATEGORY_QUERIES: Record<EventCategory, string> = {
+  conflict: "\"ceasefire\" OR \"peace talks\" OR \"peace negotiations\"",
+  climate: "\"climate summit\" OR \"emissions agreement\" OR \"climate talks\"",
+  diplomacy: "\"nuclear talks\" OR \"diplomatic negotiations\" OR \"nuclear negotiations\"",
 };
-
-// A single combined query covering every category's phrases. GNews's free
-// plan rate-limits concurrent requests (firing one request per category in
-// parallel returned 429s in testing), so all categories are resolved from
-// one API call and then bucketed client-side by matching phrase.
-const COMBINED_QUERY = Object.values(CATEGORY_PHRASES)
-  .flat()
-  .map((phrase) => `"${phrase}"`)
-  .join(" OR ");
 
 type GNewsArticle = {
   title: string;
@@ -43,14 +35,6 @@ function slugify(value: string): string {
     .replace(/(^-|-$)/g, "");
 }
 
-function categoryForArticle(article: GNewsArticle): EventCategory | undefined {
-  const haystack = `${article.title} ${article.description}`.toLowerCase();
-  const category = (Object.keys(CATEGORY_PHRASES) as EventCategory[]).find((candidate) =>
-    CATEGORY_PHRASES[candidate].some((phrase) => haystack.includes(phrase))
-  );
-  return category;
-}
-
 function mapArticleToEvent(article: GNewsArticle, category: EventCategory): Event {
   // GNews doesn't report the source's country, so availability can't be
   // narrowed from the article the way GDELT's sourcecountry allowed —
@@ -67,14 +51,15 @@ function mapArticleToEvent(article: GNewsArticle, category: EventCategory): Even
   };
 }
 
-async function fetchGNewsArticles(
+async function fetchGNewsCategory(
+  category: EventCategory,
   apiKey: string,
   options?: GNewsFetchOptions
 ): Promise<GNewsArticle[]> {
   const params = new URLSearchParams({
-    q: COMBINED_QUERY,
+    q: CATEGORY_QUERIES[category],
     lang: "en",
-    max: "10",
+    max: "3",
     // The free GNews plan strips articles older than 30 days from the
     // response ("historical data"). Sorting by relevance can surface an
     // old article that gets silently removed, leaving an empty result —
@@ -100,17 +85,18 @@ export async function fetchLiveEvents(options?: GNewsFetchOptions): Promise<Even
   const apiKey = process.env.GNEWS_API_KEY;
   if (!apiKey) return [];
 
-  const articles = await fetchGNewsArticles(apiKey, options);
-
+  const categories: EventCategory[] = ["conflict", "climate", "diplomacy"];
   const events: Event[] = [];
-  const seenCategories = new Set<EventCategory>();
 
-  for (const article of articles) {
-    const category = categoryForArticle(article);
-    if (!category || seenCategories.has(category)) continue;
-
-    seenCategories.add(category);
-    events.push(mapArticleToEvent(article, category));
+  // Sequential, not Promise.all: firing all 3 category requests
+  // concurrently hit GNews's free-tier rate limit (429s on 2 of 3
+  // requests in testing), silently dropping categories. One at a time
+  // stays under that limit at the cost of a bit more latency (well
+  // within the request's overall timeout budget).
+  for (const category of categories) {
+    const articles = await fetchGNewsCategory(category, apiKey, options);
+    const topArticle = articles[0];
+    if (topArticle) events.push(mapArticleToEvent(topArticle, category));
   }
 
   return events;

@@ -64,18 +64,9 @@ export function CountryRealSources({ country, event, onBack }: CountryRealSource
             Real coverage
           </h4>
           <p className="mt-1 text-sm text-muted-foreground">
-            {state.status === "loaded" && state.tier === "mentioning-country" ? (
-              <>
-                No outlets based in {country.name} were found covering this specific
-                story, so here&rsquo;s broader English-language coverage that mentions{" "}
-                {country.name} instead.
-              </>
-            ) : (
-              <>
-                Recent English-language coverage of this story from outlets based in{" "}
-                {country.name}.
-              </>
-            )}{" "}
+            {state.status === "loaded" && state.tier === "mentioning-country"
+              ? `No outlets based in ${country.name} were found covering this specific story, so here’s broader English-language coverage that mentions ${country.name} instead.`
+              : `Recent English-language coverage of this story from outlets based in ${country.name}.`}{" "}
             This is real, current reporting — not a synthesized summary of{" "}
             {country.name}&rsquo;s framing.
           </p>

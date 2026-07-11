@@ -126,7 +126,7 @@ export async function GET(request: Request) {
       rawArticles = fallbackArticles.filter(
         (article) =>
           article.title.toLowerCase().includes(nameLower) ||
-          article.description?.toLowerCase().includes(nameLower)
+          (article.description ?? "").toLowerCase().includes(nameLower)
       );
       tier = "mentioning-country";
     }

@@ -123,7 +123,12 @@ export function EventDetailView({
         )}
 
         {activeTab === "countries" && (
-          <CountriesTab countries={eventCountries} framings={framings} sources={sources} />
+          <CountriesTab
+            event={event}
+            countries={eventCountries}
+            framings={framings}
+            sources={sources}
+          />
         )}
 
         {activeTab === "differences" && (

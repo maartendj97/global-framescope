@@ -115,11 +115,11 @@ Purpose: immediately explain the product and surface the main analyses.
 Purpose: show the complete event catalogue.
 
 - Page title, with a search icon in the header (omit rather than ship non-functional — see product principles)
-- Complete list of the three Phase 1 events, as compact cards or rows
+- Complete list of the current event pool, as compact cards or rows — up to 10 with live data, falling back to the 3 Phase 1 mock events if live data is unavailable
 - Category/date metadata, countries, and source count per event
 - Optional category-filter chips when they add real value
 - Selecting a card opens Event Detail
-- Live product may grow to ~10 events later — not part of first implementation
+- Home shows the top 5 most recent events; the Events page shows the full pool (up to 10)
 
 ## Event Detail page
 

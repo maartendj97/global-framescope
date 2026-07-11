@@ -8,7 +8,8 @@ export default async function HomePage() {
     events.map((event) => event.id)
   );
 
-  const [featuredEvent, ...otherEvents] = events;
+  const HOME_EVENT_COUNT = 5;
+  const [featuredEvent, ...otherEvents] = events.slice(0, HOME_EVENT_COUNT);
 
   return (
     <div className="mx-auto w-full max-w-md px-4 pt-8 md:max-w-[960px]">

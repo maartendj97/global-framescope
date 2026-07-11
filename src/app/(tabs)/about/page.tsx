@@ -14,7 +14,7 @@ const SECTIONS: Section[] = [
   },
   {
     heading: "Data & sources",
-    body: "Each source represents a single article or report — its title, publisher, country, type, and publication date, with a link to the original when available. Phase 1 of Global FrameScope uses illustrative mock content: the events, framings, and publishers shown are fictional examples built to demonstrate the comparison experience, not real reporting.",
+    body: "Each source represents a single article or report — its title, publisher, country, type, and publication date, with a link to the original when available. Events are pulled from real, current news coverage and refresh roughly every hour. The per-country framing analysis (what's emphasized, downplayed, the tone, and terminology) is still illustrative mock content built to demonstrate the comparison experience, not real editorial analysis — real per-country framing is planned for a later phase.",
   },
   {
     heading: "Privacy",

@@ -2,6 +2,8 @@ import type { CountryCode, Event, EventCategory } from "@/types";
 
 const GNEWS_ENDPOINT = "https://gnews.io/api/v4/search";
 
+const MAX_TOTAL_EVENTS = 10;
+
 const ALL_COUNTRIES: CountryCode[] = ["NL", "US", "RU", "CN", "IN", "IR", "UA", "DE"];
 
 // One curated query per fixed app category. GNews has no concept of these
@@ -59,7 +61,7 @@ async function fetchGNewsCategory(
   const params = new URLSearchParams({
     q: CATEGORY_QUERIES[category],
     lang: "en",
-    max: "3",
+    max: "4",
     // The free GNews plan strips articles older than 30 days from the
     // response ("historical data"). Sorting by relevance can surface an
     // old article that gets silently removed, leaving an empty result —
@@ -87,6 +89,7 @@ export async function fetchLiveEvents(options?: GNewsFetchOptions): Promise<Even
 
   const categories: EventCategory[] = ["conflict", "climate", "diplomacy"];
   const events: Event[] = [];
+  const seenIds = new Set<string>();
 
   // Sequential with a spacing delay, not Promise.all: GNews's free-tier
   // rate limit blocks requests fired within the same short window
@@ -98,9 +101,18 @@ export async function fetchLiveEvents(options?: GNewsFetchOptions): Promise<Even
   for (const [index, category] of categories.entries()) {
     if (index > 0) await new Promise((resolve) => setTimeout(resolve, 1100));
     const articles = await fetchGNewsCategory(category, apiKey, options);
-    const topArticle = articles[0];
-    if (topArticle) events.push(mapArticleToEvent(topArticle, category));
+    for (const article of articles) {
+      const event = mapArticleToEvent(article, category);
+      if (seenIds.has(event.id)) continue;
+      seenIds.add(event.id);
+      events.push(event);
+    }
   }
 
-  return events;
+  // Most recent first, capped to the pool both Home (top 5) and Events
+  // (up to 10) draw from — a single fetch cycle serves both pages, so
+  // this doesn't add any extra GNews requests.
+  return events
+    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
+    .slice(0, MAX_TOTAL_EVENTS);
 }

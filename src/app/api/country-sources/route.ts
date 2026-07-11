@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getEventById } from "@/lib/data";
+import { getCountryByCode, getEventById } from "@/lib/data";
 import { CATEGORY_QUERIES } from "@/lib/external/gnews";
 import type { CountryCode } from "@/types";
 
@@ -22,20 +22,18 @@ export type CountrySourceArticle = {
   publishedAt: string;
 };
 
-async function fetchCountryArticles(
-  query: string,
-  country: CountryCode,
+// "from-country": outlets headquartered in that country (GNews country=
+// filter) — the strong signal. "mentioning-country": a broader fallback
+// when that filter finds nothing, searching for the country's name
+// instead — a weaker but still honest signal, labeled differently in
+// the UI so it's never confused with real local press coverage.
+export type CoverageTier = "from-country" | "mentioning-country";
+
+async function fetchGNewsArticles(
+  params: URLSearchParams,
   apiKey: string
 ): Promise<CountrySourceArticle[]> {
-  const params = new URLSearchParams({
-    q: query,
-    lang: "en",
-    country: toGNewsCountry(country),
-    max: "5",
-    sortby: "publishedAt",
-    apikey: apiKey,
-  });
-
+  params.set("apikey", apiKey);
   try {
     const response = await fetch(`${GNEWS_ENDPOINT}?${params.toString()}`, {
       next: { revalidate: 86400, tags: ["country-sources"] },
@@ -54,6 +52,25 @@ async function fetchCountryArticles(
   } catch {
     return [];
   }
+}
+
+function buildStrictParams(query: string, country: CountryCode): URLSearchParams {
+  return new URLSearchParams({
+    q: query,
+    lang: "en",
+    country: toGNewsCountry(country),
+    max: "5",
+    sortby: "publishedAt",
+  });
+}
+
+function buildFallbackParams(query: string, countryName: string): URLSearchParams {
+  return new URLSearchParams({
+    q: `${query} AND "${countryName}"`,
+    lang: "en",
+    max: "5",
+    sortby: "publishedAt",
+  });
 }
 
 export async function GET(request: Request) {
@@ -77,6 +94,17 @@ export async function GET(request: Request) {
   // the full headline combined with a country filter is narrow enough
   // that it frequently matched zero articles in testing.
   const query = CATEGORY_QUERIES[event.category];
-  const articles = await fetchCountryArticles(query, country, apiKey);
-  return NextResponse.json({ articles });
+
+  let articles = await fetchGNewsArticles(buildStrictParams(query, country), apiKey);
+  let tier: CoverageTier = "from-country";
+
+  if (articles.length === 0) {
+    const countryRecord = await getCountryByCode(country);
+    if (countryRecord) {
+      articles = await fetchGNewsArticles(buildFallbackParams(query, countryRecord.name), apiKey);
+      tier = "mentioning-country";
+    }
+  }
+
+  return NextResponse.json({ articles, tier });
 }

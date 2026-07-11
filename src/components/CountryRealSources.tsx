@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import type { Country, Event } from "@/types";
 import { BackIcon, ExternalLinkIcon } from "./icons";
 import { formatEventDate } from "@/lib/eventDisplay";
-import type { CountrySourceArticle } from "@/app/api/country-sources/route";
+import type { CountrySourceArticle, CoverageTier } from "@/app/api/country-sources/route";
 
 type CountryRealSourcesProps = {
   country: Country;
@@ -14,7 +14,7 @@ type CountryRealSourcesProps = {
 
 type FetchState =
   | { status: "loading" }
-  | { status: "loaded"; articles: CountrySourceArticle[] }
+  | { status: "loaded"; articles: CountrySourceArticle[]; tier: CoverageTier }
   | { status: "error" };
 
 export function CountryRealSources({ country, event, onBack }: CountryRealSourcesProps) {
@@ -26,8 +26,10 @@ export function CountryRealSources({ country, event, onBack }: CountryRealSource
 
     fetch(`/api/country-sources?eventId=${encodeURIComponent(event.id)}&country=${country.code}`)
       .then((response) => (response.ok ? response.json() : Promise.reject()))
-      .then((data: { articles: CountrySourceArticle[] }) => {
-        if (!cancelled) setState({ status: "loaded", articles: data.articles });
+      .then((data: { articles: CountrySourceArticle[]; tier: CoverageTier }) => {
+        if (!cancelled) {
+          setState({ status: "loaded", articles: data.articles, tier: data.tier });
+        }
       })
       .catch(() => {
         if (!cancelled) setState({ status: "error" });
@@ -62,9 +64,20 @@ export function CountryRealSources({ country, event, onBack }: CountryRealSource
             Real coverage
           </h4>
           <p className="mt-1 text-sm text-muted-foreground">
-            Recent English-language coverage of this story from outlets based in{" "}
-            {country.name}. This is real, current reporting — not a synthesized summary
-            of {country.name}&rsquo;s framing.
+            {state.status === "loaded" && state.tier === "mentioning-country" ? (
+              <>
+                No outlets based in {country.name} were found covering this specific
+                story, so here&rsquo;s broader English-language coverage that mentions{" "}
+                {country.name} instead.
+              </>
+            ) : (
+              <>
+                Recent English-language coverage of this story from outlets based in{" "}
+                {country.name}.
+              </>
+            )}{" "}
+            This is real, current reporting — not a synthesized summary of{" "}
+            {country.name}&rsquo;s framing.
           </p>
         </div>
 
@@ -87,7 +100,8 @@ export function CountryRealSources({ country, event, onBack }: CountryRealSource
 
         {state.status === "loaded" && state.articles.length === 0 && (
           <p className="text-sm text-muted-foreground">
-            No recent coverage found from {country.name} on this topic yet.
+            No coverage from or mentioning {country.name} was found for this topic
+            yet.
           </p>
         )}
 

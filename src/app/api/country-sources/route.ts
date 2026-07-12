@@ -36,21 +36,46 @@ type RawGNewsArticle = {
   source: { name: string };
 };
 
+type CachedCoverage = { articles: RawGNewsArticle[]; expiresAt: number };
+
+// Route Handlers in this Next.js version are not cached by default (see
+// node_modules/next/dist/docs/01-app/01-getting-started/15-route-handlers.md),
+// and `force-static` isn't usable here since the response must vary per
+// eventId/country — so the `next: { revalidate }` this used to pass never
+// actually cached anything (confirmed: two back-to-back requests for the
+// same event both took the full ~18s, meaning both hit GNews for real).
+// This in-memory Map is an explicit replacement — same "best-effort,
+// single-instance" caveat as gnewsUsage.ts (resets on cold start, not
+// shared across concurrent instances), but it actually works.
+const coverageCache = new Map<string, CachedCoverage>();
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
 async function fetchRawArticles(
   params: URLSearchParams,
   apiKey: string,
-  context: string
+  context: string,
+  throttle: () => Promise<void>
 ): Promise<RawGNewsArticle[]> {
   params.set("apikey", apiKey);
+  const url = `${GNEWS_ENDPOINT}?${params.toString()}`;
+
+  const cached = coverageCache.get(url);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.articles;
+  }
+
   try {
+    // Only throttle (and count) real network calls — a cache hit above
+    // already returned, so it never pays the inter-call delay or shows
+    // up in the GNews usage log.
+    await throttle();
     recordGNewsCall(context);
-    const response = await fetch(`${GNEWS_ENDPOINT}?${params.toString()}`, {
-      next: { revalidate: 86400, tags: ["country-sources"] },
-      signal: AbortSignal.timeout(5000),
-    });
+    const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
     if (!response.ok) return [];
     const data = (await response.json()) as { articles?: RawGNewsArticle[] };
-    return data.articles ?? [];
+    const articles = data.articles ?? [];
+    coverageCache.set(url, { articles, expiresAt: Date.now() + CACHE_TTL_MS });
+    return articles;
   } catch {
     return [];
   }
@@ -124,22 +149,25 @@ export async function fetchCountryCoverage(
   // that it frequently matched zero articles in testing.
   const query = CATEGORY_QUERIES[event.category];
 
-  await throttle();
+  // throttle is passed down into fetchRawArticles rather than awaited
+  // here, so it only delays actual cache-miss network calls — a cached
+  // country's lookup returns immediately, with no artificial wait.
   let rawArticles = await fetchRawArticles(
     buildStrictParams(query, country),
     apiKey,
-    `${contextPrefix}:${country}:strict`
+    `${contextPrefix}:${country}:strict`,
+    throttle
   );
   let tier: CoverageTier = "from-country";
 
   if (rawArticles.length === 0) {
     const countryRecord = await getCountryByCode(country);
     if (countryRecord) {
-      await throttle();
       const fallbackArticles = await fetchRawArticles(
         buildFallbackParams(query, countryRecord.name),
         apiKey,
-        `${contextPrefix}:${country}:fallback`
+        `${contextPrefix}:${country}:fallback`,
+        throttle
       );
       rawArticles = fallbackArticles.filter((article) =>
         matchesFallbackTier(article, countryRecord.name)

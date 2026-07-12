@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCountries, getCountryByCode, getEventById } from "@/lib/data";
 import { CATEGORY_QUERIES } from "@/lib/external/gnews";
-import { recordGNewsCall } from "@/lib/external/gnewsUsage";
+import { isOverDailyBudget, recordGNewsCall } from "@/lib/external/gnewsUsage";
 import type { CountryCode, Event } from "@/types";
 
 const GNEWS_ENDPOINT = "https://gnews.io/api/v4/search";
@@ -62,6 +62,16 @@ async function fetchRawArticles(
   const cached = coverageCache.get(url);
   if (cached && cached.expiresAt > Date.now()) {
     return cached.articles;
+  }
+
+  // Hard safety backstop: refuse further real GNews calls once today's
+  // count (best-effort, per-instance — see gnewsUsage.ts) nears the
+  // free-tier cap, so an enhancement feature can't silently exhaust the
+  // budget the baseline events-pool refresh depends on. Degrades to an
+  // empty result rather than erroring, same as an actual GNews outage.
+  if (isOverDailyBudget()) {
+    console.log(`[gnews] skipped (daily budget guard) — ${context}`);
+    return [];
   }
 
   try {
@@ -135,13 +145,18 @@ export type CountryCoverageResult = { articles: CountrySourceArticle[]; tier: Co
 // `throttle` lets callers space out GNews calls when making several in one
 // request (GNews's free tier rejects calls fired within ~1.1s of each
 // other, even sequential ones) — the default no-op preserves this route's
-// original zero-added-latency single-tap behavior.
+// original zero-added-latency single-tap behavior. `includeFallbackTier`
+// defaults to true (this route's original single-tap behavior, where one
+// extra call for one country is cheap); /api/event-sources passes false
+// to halve its worst-case per-event call count (8 vs 16), since a single
+// aggregated view multiplies this cost across all 8 countries at once.
 export async function fetchCountryCoverage(
   event: Event,
   country: CountryCode,
   apiKey: string,
   contextPrefix: string,
-  throttle: () => Promise<void> = async () => {}
+  throttle: () => Promise<void> = async () => {},
+  includeFallbackTier: boolean = true
 ): Promise<CountryCoverageResult> {
   // Reuse the same category phrase query that reliably surfaced the main
   // event in the first place, rather than the exact article headline —
@@ -160,7 +175,7 @@ export async function fetchCountryCoverage(
   );
   let tier: CoverageTier = "from-country";
 
-  if (rawArticles.length === 0) {
+  if (rawArticles.length === 0 && includeFallbackTier) {
     const countryRecord = await getCountryByCode(country);
     if (countryRecord) {
       const fallbackArticles = await fetchRawArticles(

@@ -12,13 +12,35 @@ function todayKey(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-export function recordGNewsCall(context: string): number {
+function rolloverIfNewDay(): void {
   const today = todayKey();
   if (today !== dayKey) {
     dayKey = today;
     count = 0;
   }
+}
+
+export function recordGNewsCall(context: string): number {
+  rolloverIfNewDay();
   count += 1;
   console.log(`[gnews] call #${count} today (${context})`);
   return count;
+}
+
+export function getGNewsCallCountToday(): number {
+  rolloverIfNewDay();
+  return count;
+}
+
+// Conservative safety margin below GNews's published 100/day free-tier
+// cap — leaves headroom for the fixed ~48/day baseline events-pool
+// refresh and any other traffic this same instance is serving.
+// Best-effort only: since the underlying counter is per-instance, not a
+// true global daily total, this guards against runaway usage within one
+// warm instance but can't guarantee a hard global cap on its own — see
+// the caveat above.
+const SAFE_DAILY_BUDGET = 85;
+
+export function isOverDailyBudget(): boolean {
+  return getGNewsCallCountToday() >= SAFE_DAILY_BUDGET;
 }

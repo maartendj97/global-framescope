@@ -54,7 +54,7 @@ export function EventRealSources({ event, countries }: EventRealSourcesProps) {
         </ul>
         <p className="text-xs text-muted-foreground">
           Checking coverage across all {countries.length} countries — this can
-          take up to 20 seconds the first time.
+          take up to 15 seconds the first time.
         </p>
       </div>
     );

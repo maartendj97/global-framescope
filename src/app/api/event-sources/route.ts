@@ -7,9 +7,10 @@ import {
 } from "@/app/api/country-sources/route";
 import type { CountryCode } from "@/types";
 
-// Worst case (uncached, 8 countries x up to 2 calls each, ~1.1s apart) is
-// ~18-20s. Current Vercel Hobby default (Fluid Compute) is 300s, so this
-// is defensive headroom, not a workaround for a known limit.
+// Worst case (uncached, 8 countries x 1 call each, no fallback tier,
+// ~1.1s apart) is ~10-15s. Current Vercel Hobby default (Fluid Compute)
+// is 300s, so this is defensive headroom, not a workaround for a known
+// limit.
 export const maxDuration = 30;
 
 export type EventSourceArticle = CountrySourceArticle & {
@@ -63,12 +64,18 @@ export async function GET(request: Request) {
   const results: CountryResult[] = [];
 
   for (const country of countries) {
+    // Skip the fallback ("mentioning-country") tier here — it's cheap for
+    // a single country tap (the Countries tab's use of this same
+    // function), but doubles the worst case for all 8 countries at once.
+    // Countries with no direct coverage simply show nothing in the
+    // aggregated view rather than a broader, weaker match.
     const { articles, tier } = await fetchCountryCoverage(
       event,
       country.code,
       apiKey,
       "event-sources",
-      throttle
+      throttle,
+      false
     );
     results.push({ countryCode: country.code, tier, articles });
   }

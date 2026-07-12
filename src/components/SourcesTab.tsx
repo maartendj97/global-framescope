@@ -1,5 +1,6 @@
-import type { Country, Source } from "@/types";
+import type { Country, Event, Source } from "@/types";
 import { ExternalLinkIcon } from "./icons";
+import { EventRealSources } from "./EventRealSources";
 import { formatEventDate } from "@/lib/eventDisplay";
 
 const SOURCE_TYPE_LABELS: Record<Source["sourceType"], string> = {
@@ -13,9 +14,10 @@ const SOURCE_TYPE_LABELS: Record<Source["sourceType"], string> = {
 type SourcesTabProps = {
   sources: Source[];
   countries: Country[];
+  event: Event;
 };
 
-export function SourcesTab({ sources, countries }: SourcesTabProps) {
+export function SourcesTab({ sources, countries, event }: SourcesTabProps) {
   const countryByCode = new Map(countries.map((country) => [country.code, country]));
 
   if (sources.length === 0) {
@@ -24,12 +26,8 @@ export function SourcesTab({ sources, countries }: SourcesTabProps) {
         <h3 className="text-sm font-semibold text-foreground">
           All sources cited in this analysis
         </h3>
-        <div className="mt-3 rounded-2xl border border-border bg-surface p-4">
-          <p className="text-sm text-muted-foreground">
-            There&rsquo;s no curated source list for this event yet. Open the
-            Countries tab and pick a country to see real, current coverage from
-            that country&rsquo;s press instead.
-          </p>
+        <div className="mt-3">
+          <EventRealSources event={event} countries={countries} />
         </div>
       </div>
     );

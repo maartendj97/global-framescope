@@ -163,7 +163,7 @@ export function EventDetailView({
         )}
 
         {activeTab === "sources" && (
-          <SourcesTab sources={sources} countries={eventCountries} />
+          <SourcesTab sources={sources} countries={eventCountries} event={event} />
         )}
       </div>
     </div>

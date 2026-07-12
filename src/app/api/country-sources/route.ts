@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server";
-import { getCountryByCode, getEventById } from "@/lib/data";
+import { getCountries, getCountryByCode, getEventById } from "@/lib/data";
 import { CATEGORY_QUERIES } from "@/lib/external/gnews";
 import { recordGNewsCall } from "@/lib/external/gnewsUsage";
-import type { CountryCode } from "@/types";
+import type { CountryCode, Event } from "@/types";
 
 const GNEWS_ENDPOINT = "https://gnews.io/api/v4/search";
-
-const VALID_COUNTRY_CODES: CountryCode[] = ["NL", "US", "RU", "CN", "IN", "IR", "UA", "DE"];
 
 // GNews's ISO country codes are lowercase and don't always match our
 // 2-letter codes 1:1 (e.g. Iran's ccTLD/ISO code differs from a naive
@@ -105,12 +103,61 @@ export function matchesFallbackTier(
   );
 }
 
+export type CountryCoverageResult = { articles: CountrySourceArticle[]; tier: CoverageTier };
+
+// Reusable per-country strict-then-fallback lookup, shared by this route's
+// single-country GET handler and /api/event-sources' 8-country aggregation.
+// `throttle` lets callers space out GNews calls when making several in one
+// request (GNews's free tier rejects calls fired within ~1.1s of each
+// other, even sequential ones) — the default no-op preserves this route's
+// original zero-added-latency single-tap behavior.
+export async function fetchCountryCoverage(
+  event: Event,
+  country: CountryCode,
+  apiKey: string,
+  contextPrefix: string,
+  throttle: () => Promise<void> = async () => {}
+): Promise<CountryCoverageResult> {
+  // Reuse the same category phrase query that reliably surfaced the main
+  // event in the first place, rather than the exact article headline —
+  // the full headline combined with a country filter is narrow enough
+  // that it frequently matched zero articles in testing.
+  const query = CATEGORY_QUERIES[event.category];
+
+  await throttle();
+  let rawArticles = await fetchRawArticles(
+    buildStrictParams(query, country),
+    apiKey,
+    `${contextPrefix}:${country}:strict`
+  );
+  let tier: CoverageTier = "from-country";
+
+  if (rawArticles.length === 0) {
+    const countryRecord = await getCountryByCode(country);
+    if (countryRecord) {
+      await throttle();
+      const fallbackArticles = await fetchRawArticles(
+        buildFallbackParams(query, countryRecord.name),
+        apiKey,
+        `${contextPrefix}:${country}:fallback`
+      );
+      rawArticles = fallbackArticles.filter((article) =>
+        matchesFallbackTier(article, countryRecord.name)
+      );
+      tier = "mentioning-country";
+    }
+  }
+
+  return { articles: rawArticles.map(toCountrySourceArticle), tier };
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const eventId = searchParams.get("eventId");
   const countryParam = searchParams.get("country");
 
-  if (!eventId || !countryParam || !VALID_COUNTRY_CODES.includes(countryParam as CountryCode)) {
+  const validCodes = new Set((await getCountries()).map((c) => c.code));
+  if (!eventId || !countryParam || !validCodes.has(countryParam as CountryCode)) {
     return NextResponse.json({ articles: [] }, { status: 400 });
   }
   const country = countryParam as CountryCode;
@@ -121,34 +168,6 @@ export async function GET(request: Request) {
   const event = await getEventById(eventId);
   if (!event) return NextResponse.json({ articles: [] }, { status: 404 });
 
-  // Reuse the same category phrase query that reliably surfaced the main
-  // event in the first place, rather than the exact article headline —
-  // the full headline combined with a country filter is narrow enough
-  // that it frequently matched zero articles in testing.
-  const query = CATEGORY_QUERIES[event.category];
-
-  let rawArticles = await fetchRawArticles(
-    buildStrictParams(query, country),
-    apiKey,
-    `country-sources:${country}:strict`
-  );
-  let tier: CoverageTier = "from-country";
-
-  if (rawArticles.length === 0) {
-    const countryRecord = await getCountryByCode(country);
-    if (countryRecord) {
-      const fallbackArticles = await fetchRawArticles(
-        buildFallbackParams(query, countryRecord.name),
-        apiKey,
-        `country-sources:${country}:fallback`
-      );
-      rawArticles = fallbackArticles.filter((article) =>
-        matchesFallbackTier(article, countryRecord.name)
-      );
-      tier = "mentioning-country";
-    }
-  }
-
-  const articles = rawArticles.map(toCountrySourceArticle);
+  const { articles, tier } = await fetchCountryCoverage(event, country, apiKey, "country-sources");
   return NextResponse.json({ articles, tier });
 }

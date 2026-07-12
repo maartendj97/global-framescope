@@ -1,4 +1,6 @@
+import { ALL_CATEGORIES } from "@/types";
 import type { CountryCode, Event, EventCategory } from "@/types";
+import { recordGNewsCall } from "./gnewsUsage";
 
 const GNEWS_ENDPOINT = "https://gnews.io/api/v4/search";
 
@@ -16,6 +18,9 @@ export const CATEGORY_QUERIES: Record<EventCategory, string> = {
   conflict: "\"ceasefire\" OR \"peace talks\" OR \"peace negotiations\"",
   climate: "\"climate summit\" OR \"emissions agreement\" OR \"climate talks\"",
   diplomacy: "\"nuclear talks\" OR \"diplomatic negotiations\" OR \"nuclear negotiations\"",
+  elections: "\"election results\" OR \"national election\" OR \"presidential election\"",
+  trade: "\"trade agreement\" OR \"trade deal\" OR \"tariff agreement\"",
+  humanitarian: "\"humanitarian crisis\" OR \"humanitarian aid\" OR \"refugee crisis\"",
 };
 
 type GNewsArticle = {
@@ -73,6 +78,7 @@ async function fetchGNewsCategory(
   });
 
   try {
+    recordGNewsCall(`events:${category}`);
     const response = await fetch(`${GNEWS_ENDPOINT}?${params.toString()}`, {
       next: options?.next,
       signal: AbortSignal.timeout(5000),
@@ -89,7 +95,6 @@ export async function fetchLiveEvents(options?: GNewsFetchOptions): Promise<Even
   const apiKey = process.env.GNEWS_API_KEY;
   if (!apiKey) return [];
 
-  const categories: EventCategory[] = ["conflict", "climate", "diplomacy"];
   const events: Event[] = [];
   const seenIds = new Set<string>();
 
@@ -98,9 +103,11 @@ export async function fetchLiveEvents(options?: GNewsFetchOptions): Promise<Even
   // regardless of concurrency — even back-to-back sequential calls
   // (~20ms apart) were rejected with 429 "too many requests... in a
   // short period of time" in testing. A ~1.1s gap between calls stays
-  // under that limit; this whole loop only runs once per hour anyway
-  // (see the revalidate option passed in from src/lib/data/events.ts).
-  for (const [index, category] of categories.entries()) {
+  // under that limit; this loop now runs 6 categories every 3 hours
+  // (see the revalidate option passed in from src/lib/data/events.ts) —
+  // widened from hourly when the category count doubled, to keep total
+  // daily GNews calls for the events pool roughly flat.
+  for (const [index, category] of ALL_CATEGORIES.entries()) {
     if (index > 0) await new Promise((resolve) => setTimeout(resolve, 1100));
     const articles = await fetchGNewsCategory(category, apiKey, options);
     for (const article of articles) {

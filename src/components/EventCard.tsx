@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Country, Event } from "@/types";
+import { BookmarkButton } from "./BookmarkButton";
 import { ChevronRightIcon } from "./icons";
 import {
   CATEGORY_LABELS,
@@ -67,6 +68,10 @@ export function EventCard({
             unoptimized={isExternalEventImage(event)}
             priority
           />
+          <BookmarkButton
+            eventId={event.id}
+            className="absolute right-2 top-2"
+          />
         </div>
         <div className="mt-4 space-y-2 px-1 pb-1">
           {meta}
@@ -111,7 +116,10 @@ export function EventCard({
         </p>
         {!isList && flagsAndSources}
       </div>
-      <ChevronRightIcon className="h-5 w-5 shrink-0 text-muted-foreground" />
+      <div className="flex shrink-0 items-center gap-1">
+        <BookmarkButton eventId={event.id} variant="plain" />
+        <ChevronRightIcon className="h-5 w-5 text-muted-foreground" />
+      </div>
     </Link>
   );
 }

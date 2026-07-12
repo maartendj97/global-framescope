@@ -4,6 +4,9 @@ export const CATEGORY_LABELS: Record<EventCategory, string> = {
   conflict: "Conflict",
   climate: "Climate",
   diplomacy: "Diplomacy",
+  elections: "Elections",
+  trade: "Trade",
+  humanitarian: "Humanitarian",
 };
 
 // Local editorial-style placeholder illustrations, one per category. Fixed
@@ -13,6 +16,9 @@ export const CATEGORY_IMAGES: Record<EventCategory, string> = {
   conflict: "/images/events/conflict.svg",
   climate: "/images/events/climate.svg",
   diplomacy: "/images/events/diplomacy.svg",
+  elections: "/images/events/elections.svg",
+  trade: "/images/events/trade.svg",
+  humanitarian: "/images/events/humanitarian.svg",
 };
 
 // Real events carry the source article's own thumbnail when GNews

@@ -149,7 +149,7 @@ Event Detail is reached through event cards and is not a navigation tab.
 
 ## Events page UI
 
-Clear page title ("Events") with a search icon in the header; compact list or card layout; optional horizontal category chips (All, Conflict, Climate, Diplomacy); each row/card includes thumbnail, title, category/date, country count, source count, and chevron. Avoid filters that don't yet provide real value — the search icon can stay present but non-functional-looking only if it's genuinely wired up, otherwise omit it until it does something.
+Clear page title ("Events") with a functional search input filtering by title/summary; horizontal category chips (All, plus one per `EventCategory` — Conflict, Climate, Diplomacy, Elections, Trade, Humanitarian) and a "Saved" chip filtering to bookmarked events; each row/card includes thumbnail, title, category/date, country count, source count, a bookmark toggle, and chevron. Avoid filters that don't yet provide real value — omit any control until it's genuinely wired up.
 
 ## Event Detail UI
 
@@ -200,7 +200,6 @@ Prefer local event imagery in `public/` for a stable mock build, with a consiste
 
 - Full comparison table as a primary mobile experience
 - Global framing charts (unless added later with a clear reason)
-- Saved events
 - Notifications
 - Account/profile UI
 - Country preference management

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCountryByCode, getEventById } from "@/lib/data";
 import { CATEGORY_QUERIES } from "@/lib/external/gnews";
+import { recordGNewsCall } from "@/lib/external/gnewsUsage";
 import type { CountryCode } from "@/types";
 
 const GNEWS_ENDPOINT = "https://gnews.io/api/v4/search";
@@ -39,10 +40,12 @@ type RawGNewsArticle = {
 
 async function fetchRawArticles(
   params: URLSearchParams,
-  apiKey: string
+  apiKey: string,
+  context: string
 ): Promise<RawGNewsArticle[]> {
   params.set("apikey", apiKey);
   try {
+    recordGNewsCall(context);
     const response = await fetch(`${GNEWS_ENDPOINT}?${params.toString()}`, {
       next: { revalidate: 86400, tags: ["country-sources"] },
       signal: AbortSignal.timeout(5000),
@@ -83,6 +86,25 @@ function buildFallbackParams(query: string, countryName: string): URLSearchParam
   });
 }
 
+// GNews's full-text search matches the country name anywhere in the
+// article (including body text), which surfaced weak, tangential hits in
+// testing — e.g. an Australian outlet's Iran story that mentioned
+// "Netherlands" once in passing, shown as if it were Dutch-relevant
+// coverage. Requiring the name in the title or description (not just the
+// indexed body) keeps only genuinely on-topic matches. `description` is
+// `null`/optional on some articles — the `?? ""` guard is load-bearing,
+// not defensive filler (see the e54b1c2 regression this fixes).
+export function matchesFallbackTier(
+  article: { title: string; description: string | null },
+  countryName: string
+): boolean {
+  const nameLower = countryName.toLowerCase();
+  return (
+    article.title.toLowerCase().includes(nameLower) ||
+    (article.description ?? "").toLowerCase().includes(nameLower)
+  );
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const eventId = searchParams.get("eventId");
@@ -105,7 +127,11 @@ export async function GET(request: Request) {
   // that it frequently matched zero articles in testing.
   const query = CATEGORY_QUERIES[event.category];
 
-  let rawArticles = await fetchRawArticles(buildStrictParams(query, country), apiKey);
+  let rawArticles = await fetchRawArticles(
+    buildStrictParams(query, country),
+    apiKey,
+    `country-sources:${country}:strict`
+  );
   let tier: CoverageTier = "from-country";
 
   if (rawArticles.length === 0) {
@@ -113,20 +139,11 @@ export async function GET(request: Request) {
     if (countryRecord) {
       const fallbackArticles = await fetchRawArticles(
         buildFallbackParams(query, countryRecord.name),
-        apiKey
+        apiKey,
+        `country-sources:${country}:fallback`
       );
-      // GNews's full-text search matches the country name anywhere in the
-      // article (including body text), which surfaced weak, tangential
-      // hits in testing — e.g. an Australian outlet's Iran story that
-      // mentioned "Netherlands" once in passing, shown as if it were
-      // Dutch-relevant coverage. Requiring the name in the title or
-      // description (not just the indexed body) keeps only genuinely
-      // on-topic matches.
-      const nameLower = countryRecord.name.toLowerCase();
-      rawArticles = fallbackArticles.filter(
-        (article) =>
-          article.title.toLowerCase().includes(nameLower) ||
-          (article.description ?? "").toLowerCase().includes(nameLower)
+      rawArticles = fallbackArticles.filter((article) =>
+        matchesFallbackTier(article, countryRecord.name)
       );
       tier = "mentioning-country";
     }

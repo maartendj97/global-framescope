@@ -37,6 +37,7 @@ export function CountriesTab({ event, countries, framings, sources }: CountriesT
             country={country}
             framing={framing}
             sources={framingSources}
+            eventTitle={event.title}
             onBack={() => setSelectedCode(null)}
           />
         );

@@ -1,0 +1,37 @@
+<svg viewBox="0 0 800 450" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg-humanitarian" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0D1B2A" />
+      <stop offset="100%" stop-color="#1B263B" />
+    </linearGradient>
+    <radialGradient id="glow-humanitarian" cx="50%" cy="40%" r="50%">
+      <stop offset="0%" stop-color="#D4AF37" stop-opacity="0.18" />
+      <stop offset="100%" stop-color="#D4AF37" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <rect width="800" height="450" fill="url(#bg-humanitarian)" />
+  <rect width="800" height="450" fill="url(#glow-humanitarian)" />
+
+  <!-- fine dot-grid texture -->
+  <g fill="#A8B5C7" opacity="0.10">
+    <circle cx="640" cy="360" r="1.4" /><circle cx="700" cy="360" r="1.4" /><circle cx="760" cy="360" r="1.4" />
+    <circle cx="640" cy="400" r="1.4" /><circle cx="700" cy="400" r="1.4" /><circle cx="760" cy="400" r="1.4" />
+  </g>
+
+  <!-- shelter / roof outline -->
+  <path d="M 300 260 L 400 170 L 500 260" fill="none" stroke="#A8B5C7" stroke-width="1.75" opacity="0.6" />
+  <path d="M 320 260 L 320 330 L 480 330 L 480 260" fill="none" stroke="#A8B5C7" stroke-width="1.75" opacity="0.6" />
+
+  <!-- care motif: soft cross inside -->
+  <g stroke="#D4AF37" stroke-width="2.25" opacity="0.85">
+    <line x1="400" y1="270" x2="400" y2="310" />
+    <line x1="380" y1="290" x2="420" y2="290" />
+  </g>
+
+  <!-- radiating concentric arcs, quiet support -->
+  <g fill="none" stroke="#D4AF37" opacity="0.2">
+    <circle cx="400" cy="290" r="90" stroke-width="1" />
+    <circle cx="400" cy="290" r="140" stroke-width="1" />
+  </g>
+</svg>

@@ -1,0 +1,32 @@
+<svg viewBox="0 0 800 450" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg-trade" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1B263B" />
+      <stop offset="55%" stop-color="#0D1B2A" />
+      <stop offset="100%" stop-color="#0D1B2A" />
+    </linearGradient>
+    <radialGradient id="glow-trade" cx="30%" cy="70%" r="55%">
+      <stop offset="0%" stop-color="#D4AF37" stop-opacity="0.14" />
+      <stop offset="100%" stop-color="#D4AF37" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <rect width="800" height="450" fill="url(#bg-trade)" />
+  <rect width="800" height="450" fill="url(#glow-trade)" />
+
+  <!-- fine dot-grid texture -->
+  <g fill="#A8B5C7" opacity="0.10">
+    <circle cx="90" cy="70" r="1.4" /><circle cx="150" cy="70" r="1.4" /><circle cx="210" cy="70" r="1.4" />
+    <circle cx="90" cy="120" r="1.4" /><circle cx="150" cy="120" r="1.4" /><circle cx="210" cy="120" r="1.4" />
+  </g>
+
+  <!-- two exchange arcs, flowing in opposite directions -->
+  <g fill="none" stroke="#A8B5C7" stroke-width="1.75" opacity="0.55">
+    <path d="M 160 180 C 300 120, 500 120, 640 180" />
+    <path d="M 636 172 L 648 182 L 634 192" />
+  </g>
+  <g fill="none" stroke="#D4AF37" stroke-width="1.75" opacity="0.85">
+    <path d="M 640 270 C 500 330, 300 330, 160 270" />
+    <path d="M 164 278 L 152 268 L 166 258" />
+  </g>
+</svg>

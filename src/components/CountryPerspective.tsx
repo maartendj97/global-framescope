@@ -1,12 +1,14 @@
 import type { Country, CountryFraming, Source } from "@/types";
 import { ToneBadge } from "./ToneBadge";
 import { BackIcon, ExternalLinkIcon } from "./icons";
+import { ShareButton } from "./ShareButton";
 import { formatEventDate } from "@/lib/eventDisplay";
 
 type CountryPerspectiveProps = {
   country: Country;
   framing: CountryFraming;
   sources: Source[];
+  eventTitle: string;
   onBack: () => void;
 };
 
@@ -14,18 +16,25 @@ export function CountryPerspective({
   country,
   framing,
   sources,
+  eventTitle,
   onBack,
 }: CountryPerspectiveProps) {
   return (
     <div>
-      <button
-        type="button"
-        onClick={onBack}
-        className="-ml-2 flex min-h-11 items-center gap-1 px-2 text-sm font-medium text-muted-foreground"
-      >
-        <BackIcon className="h-4 w-4" />
-        Countries
-      </button>
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={onBack}
+          className="-ml-2 flex min-h-11 items-center gap-1 px-2 text-sm font-medium text-muted-foreground"
+        >
+          <BackIcon className="h-4 w-4" />
+          Countries
+        </button>
+        <ShareButton
+          title={`${country.name}'s perspective: ${eventTitle}`}
+          text={framing.mainFrame}
+        />
+      </div>
 
       <div className="mt-4 flex items-center gap-3">
         <span className="text-2xl" aria-hidden="true">

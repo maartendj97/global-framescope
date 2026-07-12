@@ -75,3 +75,39 @@ export function SettingsIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+export function BookmarkIcon({
+  className,
+  filled = false,
+}: IconProps & { filled?: boolean }) {
+  return (
+    <svg
+      {...commonProps}
+      fill={filled ? "currentColor" : "none"}
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M6 4.5A1.5 1.5 0 0 1 7.5 3h9A1.5 1.5 0 0 1 18 4.5V21l-6-4-6 4Z" />
+    </svg>
+  );
+}
+
+export function ShareIcon({ className }: IconProps) {
+  return (
+    <svg {...commonProps} className={className} aria-hidden="true">
+      <circle cx="18" cy="5.5" r="2.25" />
+      <circle cx="6" cy="12" r="2.25" />
+      <circle cx="18" cy="18.5" r="2.25" />
+      <path d="m8 10.8 8-3.6M8 13.2l8 3.6" />
+    </svg>
+  );
+}
+
+export function SearchIcon({ className }: IconProps) {
+  return (
+    <svg {...commonProps} className={className} aria-hidden="true">
+      <circle cx="11" cy="11" r="7" />
+      <path d="m21 21-4.3-4.3" />
+    </svg>
+  );
+}

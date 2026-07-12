@@ -13,6 +13,7 @@ import {
 } from "@/lib/eventDisplay";
 import { CountriesTab } from "./CountriesTab";
 import { DifferencesTable } from "./DifferencesTable";
+import { ShareButton } from "./ShareButton";
 import { SourcesTab } from "./SourcesTab";
 
 type Tab = "overview" | "countries" | "differences" | "sources";
@@ -47,14 +48,17 @@ export function EventDetailView({
 
   return (
     <div className="mx-auto w-full max-w-md px-4 pt-6 pb-10 md:max-w-[960px]">
-      <button
-        type="button"
-        onClick={() => router.back()}
-        className="-ml-2 flex min-h-11 items-center gap-1 px-2 text-sm font-medium text-muted-foreground"
-      >
-        <BackIcon className="h-4 w-4" />
-        Back
-      </button>
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="-ml-2 flex min-h-11 items-center gap-1 px-2 text-sm font-medium text-muted-foreground"
+        >
+          <BackIcon className="h-4 w-4" />
+          Back
+        </button>
+        <ShareButton title={event.title} text={event.summary} />
+      </div>
 
       <div className="relative mt-4 aspect-video w-full overflow-hidden rounded-2xl">
         <Image

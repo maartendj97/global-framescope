@@ -1,0 +1,40 @@
+<svg viewBox="0 0 800 450" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg-elections" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0D1B2A" />
+      <stop offset="60%" stop-color="#0D1B2A" />
+      <stop offset="100%" stop-color="#1B263B" />
+    </linearGradient>
+    <radialGradient id="glow-elections" cx="72%" cy="28%" r="50%">
+      <stop offset="0%" stop-color="#D4AF37" stop-opacity="0.16" />
+      <stop offset="100%" stop-color="#D4AF37" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <rect width="800" height="450" fill="url(#bg-elections)" />
+  <rect width="800" height="450" fill="url(#glow-elections)" />
+
+  <!-- fine dot-grid texture -->
+  <g fill="#A8B5C7" opacity="0.10">
+    <circle cx="640" cy="80" r="1.4" /><circle cx="700" cy="80" r="1.4" /><circle cx="760" cy="80" r="1.4" />
+    <circle cx="640" cy="130" r="1.4" /><circle cx="700" cy="130" r="1.4" /><circle cx="760" cy="130" r="1.4" />
+    <circle cx="60" cy="370" r="1.4" /><circle cx="110" cy="370" r="1.4" /><circle cx="160" cy="370" r="1.4" />
+  </g>
+
+  <!-- ballot box -->
+  <rect x="290" y="230" width="220" height="140" rx="10" fill="none" stroke="#A8B5C7" stroke-width="1.75" opacity="0.6" />
+  <path d="M 340 230 L 370 200 L 430 200 L 460 230" fill="none" stroke="#A8B5C7" stroke-width="1.75" opacity="0.6" />
+  <line x1="365" y1="230" x2="435" y2="230" stroke="#0D1B2A" stroke-width="4" />
+
+  <!-- ballot slip being cast, marked with a checkmark -->
+  <g stroke="#D4AF37" stroke-width="2" fill="none" opacity="0.85">
+    <path d="M 375 150 L 425 150 L 425 195 L 400 210 L 375 195 Z" />
+    <path d="M 388 172 L 397 182 L 414 162" stroke-width="2.25" />
+  </g>
+
+  <!-- concentric arcs, tally/counting motif -->
+  <g fill="none" stroke="#D4AF37" opacity="0.2">
+    <circle cx="400" cy="300" r="80" stroke-width="1" />
+    <circle cx="400" cy="300" r="130" stroke-width="1" />
+  </g>
+</svg>

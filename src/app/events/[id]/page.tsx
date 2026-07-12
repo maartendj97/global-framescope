@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import {
   getCountries,
@@ -7,6 +8,27 @@ import {
   getSourcesByEventId,
 } from "@/lib/data";
 import { EventDetailView } from "@/components/EventDetailView";
+import { getEventImageSrc } from "@/lib/eventDisplay";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const event = await getEventById(id);
+  if (!event) return {};
+
+  return {
+    title: `${event.title} | Global FrameScope`,
+    description: event.summary,
+    openGraph: {
+      title: event.title,
+      description: event.summary,
+      images: [getEventImageSrc(event)],
+    },
+  };
+}
 
 export default async function EventDetailPage({
   params,

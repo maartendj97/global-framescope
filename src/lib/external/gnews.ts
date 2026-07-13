@@ -33,10 +33,6 @@ type GNewsArticle = {
   source: { name: string; url: string };
 };
 
-type GNewsFetchOptions = {
-  next?: { revalidate?: number; tags?: string[] };
-};
-
 function slugify(value: string): string {
   return value
     .toLowerCase()
@@ -63,8 +59,7 @@ function mapArticleToEvent(article: GNewsArticle, category: EventCategory): Even
 
 async function fetchGNewsCategory(
   category: EventCategory,
-  apiKey: string,
-  options?: GNewsFetchOptions
+  apiKey: string
 ): Promise<GNewsArticle[]> {
   const params = new URLSearchParams({
     q: CATEGORY_QUERIES[category],
@@ -79,9 +74,8 @@ async function fetchGNewsCategory(
   });
 
   try {
-    recordGNewsCall(`events:${category}`);
+    await recordGNewsCall(`events:${category}`);
     const response = await fetch(`${GNEWS_ENDPOINT}?${params.toString()}`, {
-      next: options?.next,
       signal: AbortSignal.timeout(5000),
     });
     if (!response.ok) return [];
@@ -92,7 +86,7 @@ async function fetchGNewsCategory(
   }
 }
 
-export async function fetchLiveEvents(options?: GNewsFetchOptions): Promise<Event[]> {
+export async function fetchLiveEvents(): Promise<Event[]> {
   const apiKey = process.env.GNEWS_API_KEY;
   if (!apiKey) return [];
 
@@ -104,13 +98,12 @@ export async function fetchLiveEvents(options?: GNewsFetchOptions): Promise<Even
   // regardless of concurrency — even back-to-back sequential calls
   // (~20ms apart) were rejected with 429 "too many requests... in a
   // short period of time" in testing. A ~1.1s gap between calls stays
-  // under that limit; this loop now runs 6 categories every 3 hours
-  // (see the revalidate option passed in from src/lib/data/events.ts) —
-  // widened from hourly when the category count doubled, to keep total
-  // daily GNews calls for the events pool roughly flat.
+  // under that limit; this loop only runs when the shared 3h Redis
+  // cache of the events pool has expired (see src/lib/data/events.ts),
+  // keeping total daily GNews calls for the events pool roughly flat.
   for (const [index, category] of ALL_CATEGORIES.entries()) {
     if (index > 0) await new Promise((resolve) => setTimeout(resolve, 1100));
-    const articles = await fetchGNewsCategory(category, apiKey, options);
+    const articles = await fetchGNewsCategory(category, apiKey);
     for (const article of articles) {
       // EU-sanctioned outlets (RT, Sputnik) never enter the events pool.
       if (isSanctionedPublisher(article.source.name)) continue;

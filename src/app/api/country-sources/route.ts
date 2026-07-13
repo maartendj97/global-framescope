@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCountries, getCountryByCode, getEventById } from "@/lib/data";
 import { CATEGORY_QUERIES } from "@/lib/external/gnews";
+import { getCached, setCached } from "@/lib/cache";
 import { isSanctionedPublisher } from "@/lib/external/blockedPublishers";
 import { isOverDailyBudget, recordGNewsCall } from "@/lib/external/gnewsUsage";
 import { fetchStateMediaCoverage, STATE_MEDIA_COUNTRIES } from "@/lib/external/stateFeeds";
@@ -43,17 +44,15 @@ type RawGNewsArticle = {
 
 type CachedCoverage = { articles: RawGNewsArticle[]; expiresAt: number };
 
-// Route Handlers in this Next.js version are not cached by default (see
-// node_modules/next/dist/docs/01-app/01-getting-started/15-route-handlers.md),
-// and `force-static` isn't usable here since the response must vary per
-// eventId/country — so the `next: { revalidate }` this used to pass never
-// actually cached anything (confirmed: two back-to-back requests for the
-// same event both took the full ~18s, meaning both hit GNews for real).
-// This in-memory Map is an explicit replacement — same "best-effort,
-// single-instance" caveat as gnewsUsage.ts (resets on cold start, not
-// shared across concurrent instances), but it actually works.
+// Two cache layers. The in-memory Map is the fast per-instance layer
+// (and the only one in local dev); Redis is the durable layer shared by
+// every server instance, so a coverage lookup anyone triggered within
+// the last 24h costs zero GNews calls for everyone. Next's own fetch
+// cache was confirmed not to work on this setup, so these are the real
+// caches.
 const coverageCache = new Map<string, CachedCoverage>();
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const CACHE_TTL_SECONDS = 24 * 60 * 60;
 
 async function fetchRawArticles(
   params: URLSearchParams,
@@ -61,20 +60,32 @@ async function fetchRawArticles(
   context: string,
   throttle: () => Promise<void>
 ): Promise<RawGNewsArticle[]> {
+  // The cache key is built before the API key is added to the request,
+  // so the secret never ends up inside cache keys.
+  const cacheKey = `coverage:v1:${params.toString()}`;
   params.set("apikey", apiKey);
   const url = `${GNEWS_ENDPOINT}?${params.toString()}`;
 
-  const cached = coverageCache.get(url);
-  if (cached && cached.expiresAt > Date.now()) {
-    return cached.articles;
+  const memoryCached = coverageCache.get(cacheKey);
+  if (memoryCached && memoryCached.expiresAt > Date.now()) {
+    return memoryCached.articles;
+  }
+
+  const redisCached = await getCached<RawGNewsArticle[]>(cacheKey);
+  if (redisCached) {
+    coverageCache.set(cacheKey, {
+      articles: redisCached,
+      expiresAt: Date.now() + CACHE_TTL_MS,
+    });
+    return redisCached;
   }
 
   // Hard safety backstop: refuse further real GNews calls once today's
-  // count (best-effort, per-instance — see gnewsUsage.ts) nears the
-  // free-tier cap, so an enhancement feature can't silently exhaust the
-  // budget the baseline events-pool refresh depends on. Degrades to an
-  // empty result rather than erroring, same as an actual GNews outage.
-  if (isOverDailyBudget()) {
+  // count nears the free-tier cap, so an enhancement feature can't
+  // silently exhaust the budget the baseline events-pool refresh
+  // depends on. Degrades to an empty result rather than erroring, same
+  // as an actual GNews outage.
+  if (await isOverDailyBudget()) {
     console.log(`[gnews] skipped (daily budget guard) — ${context}`);
     return [];
   }
@@ -84,7 +95,7 @@ async function fetchRawArticles(
     // already returned, so it never pays the inter-call delay or shows
     // up in the GNews usage log.
     await throttle();
-    recordGNewsCall(context);
+    await recordGNewsCall(context);
     const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
     if (!response.ok) return [];
     const data = (await response.json()) as { articles?: RawGNewsArticle[] };
@@ -93,7 +104,8 @@ async function fetchRawArticles(
     const articles = (data.articles ?? []).filter(
       (article) => !isSanctionedPublisher(article.source.name)
     );
-    coverageCache.set(url, { articles, expiresAt: Date.now() + CACHE_TTL_MS });
+    coverageCache.set(cacheKey, { articles, expiresAt: Date.now() + CACHE_TTL_MS });
+    await setCached(cacheKey, articles, CACHE_TTL_SECONDS);
     return articles;
   } catch {
     return [];

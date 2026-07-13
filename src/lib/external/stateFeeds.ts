@@ -1,6 +1,7 @@
 import Parser from "rss-parser";
 import type { CountryCode, Event } from "@/types";
 import type { CountrySourceArticle } from "@/app/api/country-sources/route";
+import { getCached, setCached } from "@/lib/cache";
 import { CATEGORY_QUERIES } from "./gnews";
 
 // Direct RSS feeds from state-run outlets in Russia, China and Iran.
@@ -95,19 +96,27 @@ export function mapFeedItem(item: StateFeedItem, outlet: string): CountrySourceA
 
 type CachedFeed = { items: StateFeedItem[]; expiresAt: number };
 
-// Same best-effort in-memory cache pattern (and same single-instance
-// caveat) as coverageCache in the country-sources route — moves to a
-// durable shared store (Redis) in a later step. 20 minutes matches the
-// "don't poll state outlets faster than every 15-30 min" guidance.
+// Two cache layers, same setup as the coverage cache in the
+// country-sources route: a fast per-instance Map plus the shared Redis
+// store. 20 minutes matches the "don't poll state outlets faster than
+// every 15-30 min" guidance.
 const feedCache = new Map<string, CachedFeed>();
 const FEED_CACHE_TTL_MS = 20 * 60 * 1000;
+const FEED_CACHE_TTL_SECONDS = 20 * 60;
 
 const parser = new Parser();
 
 async function fetchFeedItems(url: string): Promise<StateFeedItem[]> {
-  const cached = feedCache.get(url);
-  if (cached && cached.expiresAt > Date.now()) {
-    return cached.items;
+  const memoryCached = feedCache.get(url);
+  if (memoryCached && memoryCached.expiresAt > Date.now()) {
+    return memoryCached.items;
+  }
+
+  const cacheKey = `statefeed:v1:${url}`;
+  const redisCached = await getCached<StateFeedItem[]>(cacheKey);
+  if (redisCached) {
+    feedCache.set(url, { items: redisCached, expiresAt: Date.now() + FEED_CACHE_TTL_MS });
+    return redisCached;
   }
 
   try {
@@ -126,6 +135,7 @@ async function fetchFeedItems(url: string): Promise<StateFeedItem[]> {
       contentSnippet: item.contentSnippet,
     }));
     feedCache.set(url, { items, expiresAt: Date.now() + FEED_CACHE_TTL_MS });
+    await setCached(cacheKey, items, FEED_CACHE_TTL_SECONDS);
     return items;
   } catch {
     return [];

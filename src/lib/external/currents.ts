@@ -61,6 +61,14 @@ function mapArticleToEvent(article: CurrentsArticle, category: EventCategory): E
   };
 }
 
+// Currents' /search has no documented page-size parameter (unlike
+// GNews's max=4), so one category's query can return dozens of same-day
+// articles and flood the whole pool before other categories get a
+// look-in — confirmed live: an unbounded "conflict" query alone filled
+// all 10 pool slots. Capping client-side keeps categories balanced, the
+// same role GNews's max=4 already plays.
+const MAX_PER_CATEGORY = 3;
+
 async function fetchCurrentsCategory(
   category: EventCategory,
   apiKey: string
@@ -78,7 +86,7 @@ async function fetchCurrentsCategory(
     });
     if (!response.ok) return [];
     const data = (await response.json()) as { news?: CurrentsArticle[] };
-    return data.news ?? [];
+    return (data.news ?? []).slice(0, MAX_PER_CATEGORY);
   } catch {
     return [];
   }

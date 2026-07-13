@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCountries, getCountryByCode, getEventById } from "@/lib/data";
 import { CATEGORY_QUERIES } from "@/lib/external/gnews";
+import { isSanctionedPublisher } from "@/lib/external/blockedPublishers";
 import { isOverDailyBudget, recordGNewsCall } from "@/lib/external/gnewsUsage";
 import type { CountryCode, Event } from "@/types";
 
@@ -83,7 +84,11 @@ async function fetchRawArticles(
     const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
     if (!response.ok) return [];
     const data = (await response.json()) as { articles?: RawGNewsArticle[] };
-    const articles = data.articles ?? [];
+    // EU-sanctioned outlets (RT, Sputnik) are dropped before caching, so
+    // they can't reach the Countries tab or the aggregated Sources tab.
+    const articles = (data.articles ?? []).filter(
+      (article) => !isSanctionedPublisher(article.source.name)
+    );
     coverageCache.set(url, { articles, expiresAt: Date.now() + CACHE_TTL_MS });
     return articles;
   } catch {

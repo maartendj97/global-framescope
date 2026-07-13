@@ -1,5 +1,6 @@
 import { ALL_CATEGORIES } from "@/types";
 import type { CountryCode, Event, EventCategory } from "@/types";
+import { isSanctionedPublisher } from "./blockedPublishers";
 import { recordGNewsCall } from "./gnewsUsage";
 
 const GNEWS_ENDPOINT = "https://gnews.io/api/v4/search";
@@ -111,6 +112,8 @@ export async function fetchLiveEvents(options?: GNewsFetchOptions): Promise<Even
     if (index > 0) await new Promise((resolve) => setTimeout(resolve, 1100));
     const articles = await fetchGNewsCategory(category, apiKey, options);
     for (const article of articles) {
+      // EU-sanctioned outlets (RT, Sputnik) never enter the events pool.
+      if (isSanctionedPublisher(article.source.name)) continue;
       const event = mapArticleToEvent(article, category);
       if (seenIds.has(event.id)) continue;
       seenIds.add(event.id);

@@ -7,11 +7,11 @@ import {
 } from "@/app/api/country-sources/route";
 import type { CountryCode } from "@/types";
 
-// Worst case (uncached, 8 countries x 1 call each, no fallback tier,
-// ~1.1s apart) is ~10-15s. Current Vercel Hobby default (Fluid Compute)
-// is 300s, so this is defensive headroom, not a workaround for a known
-// limit.
-export const maxDuration = 30;
+// Worst case (uncached: 5 GNews calls ~1.1s apart plus state-outlet
+// feed fetches at up to 8s each, fetched in parallel per country) is
+// ~15-25s. Current Vercel Hobby default (Fluid Compute) is 300s, so
+// this is defensive headroom, not a workaround for a known limit.
+export const maxDuration = 60;
 
 export type EventSourceArticle = CountrySourceArticle & {
   countryCode: CountryCode;
@@ -47,11 +47,13 @@ export async function GET(request: Request) {
   const eventId = searchParams.get("eventId");
   if (!eventId) return NextResponse.json({ articles: [] }, { status: 400 });
 
-  const apiKey = process.env.GNEWS_API_KEY;
-  if (!apiKey) return NextResponse.json({ articles: [] });
-
   const event = await getEventById(eventId);
   if (!event) return NextResponse.json({ articles: [] }, { status: 404 });
+
+  // No early-return when the GNews key is missing: state-outlet feeds
+  // (Russia/China/Iran) don't need it. Aggregator-covered countries
+  // simply contribute nothing in that case.
+  const apiKey = process.env.GNEWS_API_KEY ?? null;
 
   // Filter to the event's own availableCountries (not blindly all 8) —
   // matches the filtering EventDetailView already does for the Countries/

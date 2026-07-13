@@ -110,6 +110,11 @@ export function EventRealSources({ event, countries }: EventRealSourcesProps) {
                 {" · "}
                 {formatRelativeOrDate(article.publishedAt)}
               </p>
+              {article.sourceType === "state-media" && (
+                <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-700">
+                  State media
+                </span>
+              )}
               {article.tier === "mentioning-country" && country && (
                 <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
                   Mentions {country.name}

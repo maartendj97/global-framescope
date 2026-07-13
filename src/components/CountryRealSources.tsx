@@ -67,6 +67,9 @@ export function CountryRealSources({ country, event, onBack }: CountryRealSource
             {state.status === "loaded" && state.tier === "mentioning-country"
               ? `No outlets based in ${country.name} were found covering this specific story, so here’s broader English-language coverage that mentions ${country.name} instead.`
               : `Recent English-language coverage of this story from outlets based in ${country.name}.`}{" "}
+            {state.status === "loaded" &&
+              state.articles.some((article) => article.sourceType === "state-media") &&
+              `These come directly from ${country.name}’s state-run outlets. `}
             This is real, current reporting — not a synthesized summary of{" "}
             {country.name}&rsquo;s framing.
           </p>
@@ -122,6 +125,11 @@ export function CountryRealSources({ country, event, onBack }: CountryRealSource
                   <span className="text-xs text-muted-foreground">
                     {article.publisher} &middot; {formatRelativeOrDate(article.publishedAt)}
                   </span>
+                  {article.sourceType === "state-media" && (
+                    <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-700">
+                      State media
+                    </span>
+                  )}
                   {state.tier === "mentioning-country" && (
                     <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
                       Mentions {country.name}

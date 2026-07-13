@@ -3,6 +3,7 @@ import { getCountries, getCountryByCode, getEventById } from "@/lib/data";
 import { CATEGORY_QUERIES } from "@/lib/external/gnews";
 import { isSanctionedPublisher } from "@/lib/external/blockedPublishers";
 import { isOverDailyBudget, recordGNewsCall } from "@/lib/external/gnewsUsage";
+import { fetchStateMediaCoverage, STATE_MEDIA_COUNTRIES } from "@/lib/external/stateFeeds";
 import type { CountryCode, Event } from "@/types";
 
 const GNEWS_ENDPOINT = "https://gnews.io/api/v4/search";
@@ -20,6 +21,9 @@ export type CountrySourceArticle = {
   url: string;
   publisher: string;
   publishedAt: string;
+  // Set at ingestion for articles that came directly from a state-run
+  // outlet's own feed (see stateFeeds.ts); aggregator articles omit it.
+  sourceType?: "state-media";
 };
 
 // "from-country": outlets headquartered in that country (GNews country=
@@ -145,8 +149,14 @@ export function matchesFallbackTier(
 
 export type CountryCoverageResult = { articles: CountrySourceArticle[]; tier: CoverageTier };
 
-// Reusable per-country strict-then-fallback lookup, shared by this route's
-// single-country GET handler and /api/event-sources' 8-country aggregation.
+// Reusable per-country lookup, shared by this route's single-country GET
+// handler and /api/event-sources' 8-country aggregation. Order of
+// preference:
+//   1. Direct state-outlet RSS feeds (Russia/China/Iran only) — free,
+//      no GNews budget, and the honest "state media" signal the product
+//      is built around.
+//   2. GNews strict country search (needs an API key).
+//   3. GNews broader "mentions the country" fallback, when enabled.
 // `throttle` lets callers space out GNews calls when making several in one
 // request (GNews's free tier rejects calls fired within ~1.1s of each
 // other, even sequential ones) — the default no-op preserves this route's
@@ -158,11 +168,20 @@ export type CountryCoverageResult = { articles: CountrySourceArticle[]; tier: Co
 export async function fetchCountryCoverage(
   event: Event,
   country: CountryCode,
-  apiKey: string,
+  apiKey: string | null,
   contextPrefix: string,
   throttle: () => Promise<void> = async () => {},
   includeFallbackTier: boolean = true
 ): Promise<CountryCoverageResult> {
+  if (STATE_MEDIA_COUNTRIES.has(country)) {
+    const stateArticles = await fetchStateMediaCoverage(country, event);
+    if (stateArticles.length > 0) {
+      return { articles: stateArticles, tier: "from-country" };
+    }
+  }
+
+  if (!apiKey) return { articles: [], tier: "from-country" };
+
   // Reuse the same category phrase query that reliably surfaced the main
   // event in the first place, rather than the exact article headline —
   // the full headline combined with a country filter is narrow enough
@@ -210,11 +229,14 @@ export async function GET(request: Request) {
   }
   const country = countryParam as CountryCode;
 
-  const apiKey = process.env.GNEWS_API_KEY;
-  if (!apiKey) return NextResponse.json({ articles: [] });
-
   const event = await getEventById(eventId);
   if (!event) return NextResponse.json({ articles: [] }, { status: 404 });
+
+  // No early-return when the GNews key is missing: state-outlet feeds
+  // (Russia/China/Iran) don't need it, so those countries still get
+  // real coverage; the others degrade to an empty list inside
+  // fetchCountryCoverage.
+  const apiKey = process.env.GNEWS_API_KEY ?? null;
 
   const { articles, tier } = await fetchCountryCoverage(event, country, apiKey, "country-sources");
   return NextResponse.json({ articles, tier });

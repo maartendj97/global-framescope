@@ -15,6 +15,13 @@ describe("isSanctionedPublisher", () => {
     expect(isSanctionedPublisher("Russia Today")).toBe(true);
   });
 
+  it("blocks the outlets added by the EU's June 2024 sanctions package", () => {
+    expect(isSanctionedPublisher("RIA Novosti")).toBe(true);
+    expect(isSanctionedPublisher("Izvestia")).toBe(true);
+    expect(isSanctionedPublisher("Rossiyskaya Gazeta")).toBe(true);
+    expect(isSanctionedPublisher("Voice of Europe")).toBe(true);
+  });
+
   it("does not block normal publishers", () => {
     expect(isSanctionedPublisher("Reuters")).toBe(false);
     expect(isSanctionedPublisher("The Guardian")).toBe(false);

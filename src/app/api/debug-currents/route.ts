@@ -11,10 +11,11 @@ export async function GET() {
   return NextResponse.json({
     hasKey,
     count: events.length,
-    sample: events.slice(0, 5).map((e) => ({
+    sample: events.map((e) => ({
       title: e.title,
       category: e.category,
       date: e.date,
+      summary: e.summary.slice(0, 150),
       hasImage: Boolean(e.imageUrl),
     })),
   });

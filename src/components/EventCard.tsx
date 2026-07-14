@@ -90,30 +90,22 @@ export function EventCard({
       href={`/events/${event.id}`}
       className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-3 shadow-sm transition-shadow hover:shadow-md"
     >
-      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl">
+      <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl">
         <Image
           src={getEventImageSrc(event)}
           alt=""
           fill
           className="object-cover"
-          sizes="64px"
+          sizes="96px"
           unoptimized={isExternalEventImage(event)}
         />
       </div>
       <div className="min-w-0 flex-1 space-y-1">
         {meta}
-        <h3 className="font-serif text-base leading-snug text-foreground">
+        <h3 className="line-clamp-2 font-serif text-base leading-snug text-foreground">
           {event.title}
         </h3>
-        <p
-          className={
-            isList
-              ? "text-xs text-muted-foreground"
-              : "line-clamp-1 text-xs text-muted-foreground"
-          }
-        >
-          {event.summary}
-        </p>
+        <p className="line-clamp-1 text-xs text-muted-foreground">{event.summary}</p>
         {!isList && flagsAndSources}
       </div>
       <div className="flex shrink-0 items-center gap-1">

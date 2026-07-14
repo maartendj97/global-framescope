@@ -45,6 +45,9 @@ export function CountriesTab({ event, countries, framings, sources }: CountriesT
       if (!hasFramings) {
         return (
           <CountryRealSources
+            // Remount on country switch so fetch state never leaks from the
+            // previously viewed country (initial "loading" is always fresh).
+            key={country.code}
             country={country}
             event={event}
             onBack={() => setSelectedCode(null)}

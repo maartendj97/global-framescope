@@ -125,7 +125,7 @@ Dark-mode rules:
 
 ## App shell and bottom navigation
 
-Bottom navigation contains exactly: Home, Events, About, Settings (routes and flow: see [UI_FLOW.md](UI_FLOW.md)). There is no standalone Sources tab — per-event sources live inside each Event Detail's Sources tab; About covers sourcing/methodology at a product level.
+Bottom navigation contains exactly: Home, Events, About, Settings (routes and flow: see [UI_FLOW.md](UI_FLOW.md)). There is no standalone Sources tab within Event Detail either — per-country sources live inside that country's Country Perspective view; About covers sourcing/methodology at a product level.
 
 Visual requirements:
 
@@ -153,13 +153,13 @@ Clear page title ("Events") with a functional search input filtering by title/su
 
 ## Event Detail UI
 
-Event Detail is a tabbed screen, not one long scroll. Top row: back button, optional share action. Below: event image; category/region/type tag chips; event title; published date; then a tab bar with 4 tabs — **Overview, Countries, Differences, Sources**.
+Event Detail is a tabbed screen, not one long scroll. Top row: back button, optional share action. Below: event image; category/region/type tag chips; event title; published date; then a tab bar with 3 tabs — **Overview, Countries, Differences**.
 
-**Overview tab**: neutral summary; broader context card/section; a **Countries included** preview grid (flag + name for all 8, non-interactive — the entry point into a country's framing is the Countries tab, not this grid).
+**Overview tab**: a prominent neutral summary (Body large scale, see [Typography](#typography) — this is deliberately more substantial than a caption line) and a broader context card/section. Countries are not repeated here — the entry point into a country's framing is the Countries tab.
 
 **Countries tab**: all 8 countries as rows, not chips — flag, country name, a short one-line main-frame label, a tone badge, and a chevron, under the heading "Choose a country to view its perspective." Tone badges use restrained, distinct colors per category (see [Tone badge colors](#tone-badge-colors)) — e.g. Concerned, Cautious, Critical, Neutral, Balanced, Supportive. Tapping a row opens the Country Perspective view, not an inline expansion.
 
-**Country Perspective** (opened from a Countries-tab row, own back navigation, optional share action): country header (flag + name) and a tone badge; **Main frame** (short label) and a fuller **narrative summary**; **Key focus** bullet points; a two-column **Emphasized** / **Downplayed** comparison (maps to the `highlighted` / `omitted` framing fields — Emphasized in restrained green, Downplayed in restrained red/rose, never color-alone); **Sources used** for this country's framing (publisher mark, name, published date, external-link icon). Use progressive hierarchy, not a wall of equally weighted text.
+**Country Perspective** (opened from a Countries-tab row, own back navigation, optional share action): country header (flag + name) and a tone badge; **Main frame** (short label) and a fuller **narrative summary** at a larger, more readable size; a **Tone** description; **Key focus** bullet points; **Terminology & wording** used (small pills); a two-column **Emphasized** / **Downplayed** comparison (maps to the `highlighted` / `omitted` framing fields — Emphasized in restrained green, Downplayed in restrained red/rose, never color-alone); **Sources used** for this country's framing (publisher mark, name, published date, external-link icon), at the bottom. Deliberately substantial — the goal is that a user gets real context from this screen without needing to click out to a source link. Use progressive hierarchy, not a wall of equally weighted text.
 
 ## Key Differences UI
 
@@ -171,7 +171,7 @@ Small, restrained, accessible-contrast pills — not saturated/alarming colors. 
 
 ## About page UI
 
-Use calm grouped cards/sections, similar visual language to Settings. Page title ("About"); a short "About Global FrameScope" intro (product pitch, tone matching [Product principles](../docs/MVP_SPEC.md)); an "Our method" / "How we analyze" section; a "Data & sources" section explaining what a source record represents and a visible note that Phase 1 content and publishers are illustrative mock data — this is an explanation, **not** a browsable list of every source (those live per-event in Event Detail's Sources tab); a privacy note; support/contact or feedback; app version. Do not present disabled fake toggles for features that don't exist.
+Use calm grouped cards/sections, similar visual language to Settings. Page title ("About"); a short "About Global FrameScope" intro (product pitch, tone matching [Product principles](../docs/MVP_SPEC.md)); an "Our method" / "How we analyze" section; a "Data & sources" section explaining what a source record represents and a visible note that Phase 1 content and publishers are illustrative mock data — this is an explanation, **not** a browsable list of every source (those live per-country in each Country Perspective view); a privacy note; support/contact or feedback; app version. Do not present disabled fake toggles for features that don't exist.
 
 ## Settings page UI
 

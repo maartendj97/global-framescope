@@ -91,7 +91,7 @@ Bottom navigation, exactly 4 items:
 3. About
 4. Settings
 
-There is no standalone, cross-event Sources page. Each event's per-event source list lives inside that event's Event Detail (Sources tab, see below). About explains sourcing/methodology at a product level instead of duplicating a global source browser.
+There is no standalone, cross-event Sources page, and no dedicated Sources tab within Event Detail either. Each country's sources live inside that country's own Country Perspective view (reached from the Countries tab). About explains sourcing/methodology at a product level instead of duplicating a global source browser.
 
 - Active item gets a rounded pill-style highlight.
 - The whole bottom nav is rounded and reads as a floating mobile-app nav bar.
@@ -123,16 +123,15 @@ Purpose: show the complete event catalogue.
 
 ## Event Detail page
 
-This is the central MVP experience. It is a **tabbed** screen — Overview, Countries, Differences, Sources — not one long scrolling page.
+This is the central MVP experience. It is a **tabbed** screen — Overview, Countries, Differences — not one long scrolling page.
 
-1. **Overview tab** (default): back navigation, event image, category/region/type tags, event title, published date, neutral summary, broader event context, and a non-interactive "Countries included" preview grid of all eight countries.
+1. **Overview tab** (default): back navigation, event image, category/region/type tags, event title, published date, neutral summary, and broader event context. Countries are not duplicated here — see the Countries tab.
 2. **Countries tab**: all eight countries listed as rows (flag, name, one-line main-frame label, tone badge). Tapping a row opens a full **Country Perspective** view for that country.
 3. **Differences tab**: a comparison table, one row per country, with Main frame and Tone columns.
-4. **Sources tab**: all sources cited anywhere in this event's analysis.
 
 ### Country Perspective (opened from the Countries tab)
 
-Its own screen with back navigation: country header + tone badge, main frame, narrative summary, key focus points, an Emphasized/Downplayed comparison (maps to `highlighted`/`omitted`), and the sources used for that country's framing.
+Its own screen with back navigation: country header + tone badge, main frame, narrative summary, a tone description, key focus points, terminology/wording used, an Emphasized/Downplayed comparison (maps to `highlighted`/`omitted`), and the sources used for that country's framing — deliberately substantial enough that the user gets real context without needing to click out to a source link.
 
 ### Country-selection behavior
 
@@ -175,7 +174,7 @@ Presented as a compact comparison table (one row per country, Main frame and Ton
 
 ## About page
 
-Real nav item, and a real polished MVP screen — not a disabled placeholder. Purpose: build trust and explain the product, without duplicating a full cross-event source browser (per-event sources live in each Event Detail's Sources tab — see [Key Differences](#key-differences) above and [Event Detail page](#event-detail-page)).
+Real nav item, and a real polished MVP screen — not a disabled placeholder. Purpose: build trust and explain the product, without duplicating a full cross-event source browser (per-country sources live in each country's Country Perspective view — see [Key Differences](#key-differences) above and [Event Detail page](#event-detail-page)).
 
 Content, as honest informational rows/sections:
 
@@ -210,7 +209,7 @@ Mobile-first, premium editorial character (calm, rounded, high-contrast light/da
 - No framing details are shown until a country is selected
 - Only one country's framing is shown at a time
 - Key Differences are readable on a small mobile screen
-- Sources are visible in framing context via each event's Sources tab; About explains sourcing and methodology
+- Sources are visible in framing context via each country's Country Perspective view; About explains sourcing and methodology
 - Settings allows Light and Dark appearance selection, persisted locally, seeded from the OS preference on first visit
 - Light and dark modes are visually complete and accessible
 - TypeScript validation, ESLint, and the production build all pass

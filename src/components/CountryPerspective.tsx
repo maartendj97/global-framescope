@@ -49,12 +49,19 @@ export function CountryPerspective({
           <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Main frame
           </h4>
-          <p className="mt-1 font-serif text-lg text-foreground">
+          <p className="mt-1 font-serif text-xl text-foreground">
             {framing.mainFrame}
           </p>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-2 text-[15px] leading-relaxed text-foreground">
             {framing.mainNarrative}
           </p>
+        </div>
+
+        <div>
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Tone
+          </h4>
+          <p className="mt-1 text-sm text-foreground">{framing.tone}</p>
         </div>
 
         <div>
@@ -69,6 +76,22 @@ export function CountryPerspective({
               </li>
             ))}
           </ul>
+        </div>
+
+        <div>
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Terminology &amp; wording
+          </h4>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {framing.terminology.map((term) => (
+              <span
+                key={term}
+                className="inline-flex items-center rounded-full bg-surface-secondary px-2.5 py-1 text-xs font-medium text-foreground"
+              >
+                {term}
+              </span>
+            ))}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">

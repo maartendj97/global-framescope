@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import * as Tabs from "@radix-ui/react-tabs";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import type { Country, CountryFraming, Event, KeyDifference, Source } from "@/types";
@@ -41,7 +41,6 @@ export function EventDetailView({
   sources,
 }: EventDetailViewProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<Tab>("overview");
   const eventCountries = countries.filter((country) =>
     event.availableCountries.includes(country.code)
   );
@@ -81,25 +80,23 @@ export function EventDetailView({
         {event.title}
       </h1>
 
-      <div className="mt-5 flex gap-1 rounded-full border border-border bg-surface-secondary p-1">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex min-h-11 flex-1 items-center justify-center rounded-full px-2 text-xs font-medium transition-colors ${
-              activeTab === tab.id
-                ? "bg-foreground text-inverse-foreground"
-                : "text-muted-foreground"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <Tabs.Root defaultValue="overview">
+        <Tabs.List
+          aria-label="Event detail sections"
+          className="mt-5 flex gap-1 rounded-full border border-border bg-surface-secondary p-1"
+        >
+          {TABS.map((tab) => (
+            <Tabs.Trigger
+              key={tab.id}
+              value={tab.id}
+              className="flex min-h-11 flex-1 items-center justify-center rounded-full px-2 text-xs font-medium text-muted-foreground transition-colors data-[state=active]:bg-foreground data-[state=active]:text-inverse-foreground"
+            >
+              {tab.label}
+            </Tabs.Trigger>
+          ))}
+        </Tabs.List>
 
-      <div className="mt-5">
-        {activeTab === "overview" && (
+        <Tabs.Content value="overview" className="mt-5">
           <div className="space-y-5">
             <div>
               <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -130,18 +127,18 @@ export function EventDetailView({
               </div>
             </div>
           </div>
-        )}
+        </Tabs.Content>
 
-        {activeTab === "countries" && (
+        <Tabs.Content value="countries" className="mt-5">
           <CountriesTab
             event={event}
             countries={eventCountries}
             framings={framings}
             sources={sources}
           />
-        )}
+        </Tabs.Content>
 
-        {activeTab === "differences" && (
+        <Tabs.Content value="differences" className="mt-5">
           <div className="space-y-5">
             <div className="space-y-3">
               {keyDifferences.map((difference) => (
@@ -160,12 +157,12 @@ export function EventDetailView({
             </div>
             <DifferencesTable countries={eventCountries} framings={framings} />
           </div>
-        )}
+        </Tabs.Content>
 
-        {activeTab === "sources" && (
+        <Tabs.Content value="sources" className="mt-5">
           <SourcesTab sources={sources} countries={eventCountries} event={event} />
-        )}
-      </div>
+        </Tabs.Content>
+      </Tabs.Root>
     </div>
   );
 }

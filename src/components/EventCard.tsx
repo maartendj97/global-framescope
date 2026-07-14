@@ -14,7 +14,7 @@ type EventCardProps = {
   event: Event;
   countries: Country[];
   sourceCount: number;
-  variant?: "featured" | "compact" | "list";
+  variant?: "featured" | "secondary" | "compact" | "list";
 };
 
 export function EventCard({
@@ -24,6 +24,7 @@ export function EventCard({
   variant = "compact",
 }: EventCardProps) {
   const isFeatured = variant === "featured";
+  const isSecondary = variant === "secondary";
   const isList = variant === "list";
   const eventCountries = countries.filter((country) =>
     event.availableCountries.includes(country.code)
@@ -52,7 +53,7 @@ export function EventCard({
     </div>
   );
 
-  if (isFeatured) {
+  if (isFeatured || isSecondary) {
     return (
       <Link
         href={`/events/${event.id}`}
@@ -66,7 +67,7 @@ export function EventCard({
             className="object-cover"
             sizes="(min-width: 768px) 600px, 100vw"
             unoptimized={isExternalEventImage(event)}
-            priority
+            priority={isFeatured}
           />
           <BookmarkButton
             eventId={event.id}
@@ -75,10 +76,16 @@ export function EventCard({
         </div>
         <div className="mt-4 space-y-2 px-1 pb-1">
           {meta}
-          <h2 className="font-serif text-xl leading-snug text-foreground">
+          <h2
+            className={`font-serif leading-snug text-foreground ${
+              isFeatured ? "text-xl" : "text-lg"
+            }`}
+          >
             {event.title}
           </h2>
-          <p className="text-sm text-muted-foreground">{event.summary}</p>
+          <p className={`text-muted-foreground ${isFeatured ? "text-sm" : "text-xs"}`}>
+            {event.summary}
+          </p>
           {flagsAndSources}
         </div>
       </Link>

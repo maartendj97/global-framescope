@@ -143,7 +143,7 @@ Event Detail is reached through event cards and is not a navigation tab.
 
 **Header**: small Global FrameScope wordmark/brand line; main intro "Compare international framing, country by country"; optional short supporting line.
 
-**Event presentation**: a "Today's major events" featured card (larger, can be part of a swipeable set if more than one is featured), followed by an "Other events" section with a "View all" link to the Events page and the remaining events as more compact rows. Cards use calm editorial images or local placeholder visuals with a consistent aspect ratio (16:9 or 3:2 preferred).
+**Event presentation**: a "Today's major events" featured card (larger, can be part of a swipeable set if more than one is featured), followed by an "Other events" section with a "View all" link to the Events page and the remaining events as same-size cards (full-width 16:9 image, matching the featured card's layout) with a slightly smaller title and summary than the featured card, so the featured event still reads as primary. Cards use calm editorial images or local placeholder visuals with a consistent aspect ratio (16:9 or 3:2 preferred).
 
 **Event card anatomy**: image; category and date row; event title; concise summary; compact country-indicator row for the eight countries; source count and/or update metadata; a clear chevron/arrow/click affordance. Do not show country framing detail on the card.
 

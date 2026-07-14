@@ -105,7 +105,7 @@ Purpose: immediately explain the product and surface the main analyses.
 
 - Global FrameScope branding
 - Intro line: "Compare international framing, country by country"
-- A featured "Today's major events" card, followed by an "Other events" section (compact rows + a "View all" link to the Events page)
+- A featured "Today's major events" card, followed by an "Other events" section (same-size cards as the featured one, with a slightly smaller title/summary + a "View all" link to the Events page)
 - Event cards show: image, category and date, title, concise summary, visible country indicators for the eight countries, source count and/or updated info, and a clear affordance to open Event Detail
 - Do not show detailed country framing directly on Home cards
 - Mobile bottom navigation

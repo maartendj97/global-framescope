@@ -47,14 +47,14 @@ export default async function HomePage() {
               View all
             </Link>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-5">
             {otherEvents.map((event) => (
               <EventCard
                 key={event.id}
                 event={event}
                 countries={countries}
                 sourceCount={sourceCountByEventId.get(event.id) ?? 0}
-                variant="compact"
+                variant="secondary"
               />
             ))}
           </div>

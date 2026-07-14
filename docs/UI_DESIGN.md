@@ -177,7 +177,7 @@ Use calm grouped cards/sections, similar visual language to Settings. Page title
 
 Use calm grouped cards. Deliberately narrow now that About owns the informational content.
 
-**Appearance card**: label "Appearance"; segmented control or radio-card group with System / Light / Dark; show the current choice clearly; theme changes preview immediately.
+**Appearance card**: label "Appearance"; segmented control or radio-card group with Light / Dark; show the current choice clearly; theme changes preview immediately. On first visit, the initial value is seeded once from the OS color-scheme preference, then becomes a fixed, explicit choice — there is no live-following "System" mode.
 
 No other cards in Phase 1 — no fake working controls for features that don't exist. (Language and version, if shown anywhere, live on the About page instead.)
 

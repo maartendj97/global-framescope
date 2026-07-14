@@ -192,7 +192,7 @@ Do not add fake working controls. Full source-management functionality (a real, 
 
 Settings is a real, polished screen, deliberately narrow in scope now that About owns the informational content.
 
-**Functional MVP setting — Appearance**: System / Light / Dark. Default to System unless the user chooses otherwise; persist the choice locally in the browser (no account required); apply the theme across all routes; avoid a visible flash of the wrong theme on load where reasonably possible.
+**Functional MVP setting — Appearance**: Light / Dark. On first visit (no stored choice yet), the OS color-scheme preference is snapshotted once as the initial theme; from then on it's an explicit, fixed choice — persisted locally in the browser (no account required), applied across all routes, avoiding a visible flash of the wrong theme on load where reasonably possible.
 
 No other settings in Phase 1 — no fake working controls for features that don't exist yet. Language, notifications, country preferences, and accounts belong to later phases. (Language: English and app version, if shown, live on the About page instead — see above.)
 
@@ -211,7 +211,7 @@ Mobile-first, premium editorial character (calm, rounded, high-contrast light/da
 - Only one country's framing is shown at a time
 - Key Differences are readable on a small mobile screen
 - Sources are visible in framing context via each event's Sources tab; About explains sourcing and methodology
-- Settings allows System, Light, and Dark appearance selection, persisted locally
+- Settings allows Light and Dark appearance selection, persisted locally, seeded from the OS preference on first visit
 - Light and dark modes are visually complete and accessible
 - TypeScript validation, ESLint, and the production build all pass
 - The experience remains usable from small mobile widths through desktop

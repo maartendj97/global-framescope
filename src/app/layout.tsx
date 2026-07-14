@@ -18,7 +18,10 @@ export const metadata: Metadata = {
   description: "Compare international framing, country by country.",
 };
 
-const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem("framescope-theme");if(t==="light"||t==="dark"){document.documentElement.setAttribute("data-theme",t);}}catch(e){}})();`;
+// On first visit (no stored choice yet), snapshot the OS color-scheme once
+// and persist it as an explicit choice — from then on it's a fixed
+// light/dark preference, not a live-following "system" mode.
+const THEME_INIT_SCRIPT = `(function(){try{var k="framescope-theme";var t=localStorage.getItem(k);if(t!=="light"&&t!=="dark"){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";localStorage.setItem(k,t);}document.documentElement.setAttribute("data-theme",t);}catch(e){}})();`;
 
 export default function RootLayout({
   children,

@@ -1,10 +1,10 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import * as RadioGroup from "@radix-ui/react-radio-group";
 import { applyTheme, getStoredPreference, type ThemePreference } from "@/lib/theme";
 
 const OPTIONS: { value: ThemePreference; label: string }[] = [
-  { value: "system", label: "System" },
   { value: "light", label: "Light" },
   { value: "dark", label: "Dark" },
 ];
@@ -17,7 +17,7 @@ function subscribe(callback: () => void) {
 }
 
 function getServerSnapshot(): ThemePreference {
-  return "system";
+  return "light";
 }
 
 export default function SettingsPage() {
@@ -34,28 +34,22 @@ export default function SettingsPage() {
 
       <div className="mt-4 rounded-2xl border border-border bg-surface p-4">
         <h2 className="text-sm font-semibold text-foreground">Appearance</h2>
-        <div
-          role="radiogroup"
+        <RadioGroup.Root
+          value={preference}
+          onValueChange={(value) => handleSelect(value as ThemePreference)}
           aria-label="Appearance"
           className="mt-3 flex gap-1 rounded-full border border-border bg-surface-secondary p-1"
         >
           {OPTIONS.map((option) => (
-            <button
+            <RadioGroup.Item
               key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={preference === option.value}
-              onClick={() => handleSelect(option.value)}
-              className={`flex min-h-11 flex-1 items-center justify-center rounded-full px-3 text-sm font-medium transition-colors ${
-                preference === option.value
-                  ? "bg-foreground text-inverse-foreground"
-                  : "text-muted-foreground"
-              }`}
+              value={option.value}
+              className="flex min-h-11 flex-1 items-center justify-center rounded-full px-3 text-sm font-medium text-muted-foreground transition-colors data-[state=checked]:bg-foreground data-[state=checked]:text-inverse-foreground"
             >
               {option.label}
-            </button>
+            </RadioGroup.Item>
           ))}
-        </div>
+        </RadioGroup.Root>
       </div>
     </div>
   );

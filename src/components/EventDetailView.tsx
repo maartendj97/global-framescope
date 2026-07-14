@@ -100,7 +100,7 @@ export function EventDetailView({
               <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Summary
               </h2>
-              <p className="mt-1 text-[17px] leading-[26px] text-foreground">
+              <p className="mt-1 text-sm leading-relaxed text-foreground">
                 {event.summary}
               </p>
             </div>
@@ -109,6 +109,16 @@ export function EventDetailView({
                 Context
               </h2>
               <p className="mt-1 text-sm text-foreground">{event.context}</p>
+            </div>
+            <div>
+              <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Perspectives
+              </h2>
+              <p className="mt-1 text-sm text-foreground">
+                {eventCountries.length} countries are covering this story. Open the{" "}
+                <span className="font-medium">Countries</span> tab above to see how each
+                one frames it.
+              </p>
             </div>
           </div>
         </Tabs.Content>

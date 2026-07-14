@@ -125,7 +125,7 @@ Purpose: show the complete event catalogue.
 
 This is the central MVP experience. It is a **tabbed** screen — Overview, Countries, Differences — not one long scrolling page.
 
-1. **Overview tab** (default): back navigation, event image, category/region/type tags, event title, published date, neutral summary, and broader event context. Countries are not duplicated here — see the Countries tab.
+1. **Overview tab** (default): back navigation, event image, category/region/type tags, event title, published date, neutral summary, broader event context, and a short "Perspectives" line noting the country count as a teaser toward the Countries tab. Countries are not duplicated as a grid here — see the Countries tab.
 2. **Countries tab**: all eight countries listed as rows (flag, name, one-line main-frame label, tone badge). Tapping a row opens a full **Country Perspective** view for that country.
 3. **Differences tab**: a comparison table, one row per country, with Main frame and Tone columns.
 

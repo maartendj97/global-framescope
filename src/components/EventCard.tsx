@@ -88,9 +88,15 @@ export function EventCard({
   return (
     <Link
       href={`/events/${event.id}`}
-      className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-3 shadow-sm transition-shadow hover:shadow-md"
+      className={`flex gap-3 rounded-2xl border border-border bg-surface p-3 shadow-sm transition-shadow hover:shadow-md ${
+        isList ? "items-stretch" : "items-center"
+      }`}
     >
-      <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl">
+      <div
+        className={`relative w-24 shrink-0 overflow-hidden rounded-xl ${
+          isList ? "self-stretch" : "h-24"
+        }`}
+      >
         <Image
           src={getEventImageSrc(event)}
           alt=""
@@ -102,16 +108,22 @@ export function EventCard({
       </div>
       <div className="min-w-0 flex-1 space-y-1">
         {meta}
-        <h3 className="line-clamp-2 font-serif text-base leading-snug text-foreground">
+        <h3
+          className={`font-serif text-base leading-snug text-foreground ${
+            isList ? "" : "line-clamp-2"
+          }`}
+        >
           {event.title}
         </h3>
         <p className="line-clamp-1 text-xs text-muted-foreground">{event.summary}</p>
         {!isList && flagsAndSources}
       </div>
-      <div className="flex shrink-0 items-center gap-1">
-        <BookmarkButton eventId={event.id} variant="plain" />
-        <ChevronRightIcon className="h-5 w-5 text-muted-foreground" />
-      </div>
+      {!isList && (
+        <div className="flex shrink-0 items-center gap-1">
+          <BookmarkButton eventId={event.id} variant="plain" />
+          <ChevronRightIcon className="h-5 w-5 text-muted-foreground" />
+        </div>
+      )}
     </Link>
   );
 }

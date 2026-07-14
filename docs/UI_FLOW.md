@@ -12,7 +12,7 @@ Navigation and screen-flow source of truth. Content requirements per screen live
 | `/about` | About |
 | `/settings` | Settings |
 
-`/events/[id]` has no nav-bar entry of its own — it's reached only via an event card (see below). There is no `/sources` route — per-event sources live inside each Event Detail's Sources tab; About covers sourcing at a product level (see [MVP_SPEC.md](MVP_SPEC.md#about-page)).
+`/events/[id]` has no nav-bar entry of its own — it's reached only via an event card (see below). There is no `/sources` route and no standalone Sources tab — per-country sources live inside that country's own Country Perspective view (reached from the Countries tab); About covers sourcing at a product level (see [MVP_SPEC.md](MVP_SPEC.md#about-page)).
 
 ## Bottom navigation
 
@@ -39,9 +39,8 @@ Home ──(tap event card)──┐
                           ├──> Event Detail
 Events ─(tap event card)─┘        │
                                    ├─ Overview tab
-                                   ├─ Countries tab ──(tap a country row)──> Country Perspective (full-screen)
-                                   ├─ Differences tab (comparison table)
-                                   └─ Sources tab (this event's sources)
+                                   ├─ Countries tab ──(tap a country row)──> Country Perspective (full-screen, sources included)
+                                   └─ Differences tab (comparison table)
 
 About (nav) ──> About page (product info, methodology, sourcing note — not a source browser)
 Settings (nav) ──> Settings (Appearance only in Phase 1)
@@ -53,13 +52,12 @@ Settings (nav) ──> Settings (Appearance only in Phase 1)
 
 ## Event Detail interaction pattern
 
-Event Detail is organized into 4 tabs, not one long scrolling page: **Overview, Countries, Differences, Sources**.
+Event Detail is organized into 3 tabs, not one long scrolling page: **Overview, Countries, Differences**.
 
-1. **Overview tab** (default on open): event image, category/region/type tags, title, published date, neutral summary, broader context, and a "Countries included" grid showing all eight countries (flag + name) as a preview — not yet interactive framing detail.
+1. **Overview tab** (default on open): event image, category/region/type tags, title, published date, neutral summary, and broader context. Countries live only in the Countries tab, not duplicated here.
 2. **Countries tab**: all eight countries listed as rows (flag, name, a one-line main-frame label, and a tone badge — e.g. Concerned / Cautious / Critical / Neutral / Balanced / Supportive). Tapping a row opens that country's **Country Perspective** view.
-3. **Country Perspective** (opened from a Countries-tab row, with its own back navigation): tone badge, main frame, narrative summary, key focus points, an Emphasized/Downplayed two-column comparison, and the sources cited for that specific country's framing.
+3. **Country Perspective** (opened from a Countries-tab row, with its own back navigation): tone badge, main frame, narrative summary, tone description, key focus points, terminology/wording, an Emphasized/Downplayed two-column comparison, and the sources cited for that specific country's framing — this is where per-country sources live, not a separate tab.
 4. **Differences tab**: a comparison table — one row per country, columns for Main frame and Tone — giving an at-a-glance cross-country view. (This supersedes an earlier stacked-card-only design; see [UI_DESIGN.md](UI_DESIGN.md#key-differences-ui).)
-5. **Sources tab**: the full list of sources cited anywhere in this event's analysis.
 
 No country's framing is shown until the user taps into it from the Countries tab — first load never jumps straight to a country's detail.
 

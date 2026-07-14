@@ -14,15 +14,13 @@ import {
 import { CountriesTab } from "./CountriesTab";
 import { DifferencesTable } from "./DifferencesTable";
 import { ShareButton } from "./ShareButton";
-import { SourcesTab } from "./SourcesTab";
 
-type Tab = "overview" | "countries" | "differences" | "sources";
+type Tab = "overview" | "countries" | "differences";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "overview", label: "Overview" },
   { id: "countries", label: "Countries" },
   { id: "differences", label: "Differences" },
-  { id: "sources", label: "Sources" },
 ];
 
 type EventDetailViewProps = {
@@ -102,29 +100,15 @@ export function EventDetailView({
               <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Summary
               </h2>
-              <p className="mt-1 text-sm text-foreground">{event.summary}</p>
+              <p className="mt-1 text-[17px] leading-[26px] text-foreground">
+                {event.summary}
+              </p>
             </div>
             <div>
               <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Context
               </h2>
               <p className="mt-1 text-sm text-foreground">{event.context}</p>
-            </div>
-            <div>
-              <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Countries included
-              </h2>
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                {eventCountries.map((country) => (
-                  <div
-                    key={country.code}
-                    className="flex items-center gap-2 rounded-xl border border-border bg-surface px-3 py-2 text-sm text-foreground"
-                  >
-                    <span aria-hidden="true">{country.flagEmoji}</span>
-                    {country.name}
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
         </Tabs.Content>
@@ -157,10 +141,6 @@ export function EventDetailView({
             </div>
             <DifferencesTable countries={eventCountries} framings={framings} />
           </div>
-        </Tabs.Content>
-
-        <Tabs.Content value="sources" className="mt-5">
-          <SourcesTab sources={sources} countries={eventCountries} event={event} />
         </Tabs.Content>
       </Tabs.Root>
     </div>

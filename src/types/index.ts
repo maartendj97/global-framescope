@@ -5,3 +5,9 @@ export { ALL_CATEGORIES } from "./event";
 export type { CountryFraming, ToneCategory } from "./framing";
 export type { Source, SourceType } from "./source";
 export type { KeyDifference } from "./keyDifference";
+export type {
+  CountrySourceArticle,
+  CoverageTier,
+  CountryCoverageResult,
+  EventSourceArticle,
+} from "./coverage";

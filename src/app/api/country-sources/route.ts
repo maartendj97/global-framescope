@@ -5,7 +5,13 @@ import { getCached, setCached } from "@/lib/cache";
 import { isSanctionedPublisher } from "@/lib/external/blockedPublishers";
 import { isOverDailyBudget, recordGNewsCall } from "@/lib/external/gnewsUsage";
 import { fetchStateMediaCoverage, STATE_MEDIA_COUNTRIES } from "@/lib/external/stateFeeds";
-import type { CountryCode, Event } from "@/types";
+import type {
+  CountryCode,
+  CountryCoverageResult,
+  CountrySourceArticle,
+  CoverageTier,
+  Event,
+} from "@/types";
 
 const GNEWS_ENDPOINT = "https://gnews.io/api/v4/search";
 
@@ -16,23 +22,6 @@ const GNEWS_ENDPOINT = "https://gnews.io/api/v4/search";
 function toGNewsCountry(code: CountryCode): string {
   return code.toLowerCase();
 }
-
-export type CountrySourceArticle = {
-  title: string;
-  url: string;
-  publisher: string;
-  publishedAt: string;
-  // Set at ingestion for articles that came directly from a state-run
-  // outlet's own feed (see stateFeeds.ts); aggregator articles omit it.
-  sourceType?: "state-media";
-};
-
-// "from-country": outlets headquartered in that country (GNews country=
-// filter) — the strong signal. "mentioning-country": a broader fallback
-// when that filter finds nothing, searching for the country's name
-// instead — a weaker but still honest signal, labeled differently in
-// the UI so it's never confused with real local press coverage.
-export type CoverageTier = "from-country" | "mentioning-country";
 
 type RawGNewsArticle = {
   title: string;
@@ -162,8 +151,6 @@ export function matchesFallbackTier(
     (article.description ?? "").toLowerCase().includes(nameLower)
   );
 }
-
-export type CountryCoverageResult = { articles: CountrySourceArticle[]; tier: CoverageTier };
 
 // Reusable per-country lookup, shared by this route's single-country GET
 // handler and /api/event-sources' 8-country aggregation. Order of

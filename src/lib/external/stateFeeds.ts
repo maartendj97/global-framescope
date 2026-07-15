@@ -1,6 +1,5 @@
 import Parser from "rss-parser";
-import type { CountryCode, Event } from "@/types";
-import type { CountrySourceArticle } from "@/app/api/country-sources/route";
+import type { CountryCode, CountrySourceArticle, Event } from "@/types";
 import { getCached, setCached } from "@/lib/cache";
 import { CATEGORY_QUERIES } from "./gnews";
 

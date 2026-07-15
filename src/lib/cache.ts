@@ -40,3 +40,21 @@ export async function setCached(
     console.error(`[cache] write failed for ${key}:`, error);
   }
 }
+
+// Short-lived distributed lock via SET NX EX: only the first caller to
+// reach this within the TTL window gets `true`; everyone else gets
+// `false` until the key expires. No explicit unlock — the TTL alone
+// releases it, so a crashed holder self-heals instead of wedging the
+// lock open forever. Fails open (returns true) when Redis is
+// unavailable, so a cache outage blocks nothing — at worst callers
+// behave as if there were no lock at all, same as before this existed.
+export async function acquireLock(key: string, ttlSeconds: number): Promise<boolean> {
+  if (!redis) return true;
+  try {
+    const result = await redis.set(key, "1", { ex: ttlSeconds, nx: true });
+    return result === "OK";
+  } catch (error) {
+    console.error(`[cache] lock acquire failed for ${key}:`, error);
+    return true;
+  }
+}

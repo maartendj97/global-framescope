@@ -1,14 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import type { Country, CountryCode, CountryFraming, Event, Source } from "@/types";
+import { useState } from "react";
+import useSWR from "swr";
+import type {
+  Country,
+  CountryCode,
+  CountryFraming,
+  Event,
+  EventSourceArticle,
+  Source,
+} from "@/types";
 import { ToneBadge } from "./ToneBadge";
 import { Flag } from "./Flag";
 import { ChevronRightIcon } from "./icons";
 import { CountryPerspective } from "./CountryPerspective";
 import { CountryRealSources } from "./CountryRealSources";
 import { StaggerItem } from "./StaggerItem";
-import type { EventSourceArticle } from "@/app/api/event-sources/route";
+import { fetcher, SWR_OPTIONS } from "@/lib/swrFetcher";
 
 type CountriesTabProps = {
   event: Event;
@@ -61,25 +69,19 @@ export function CountriesTab({ event, countries, framings, sources }: CountriesT
   // fetched articles per country instead of a synthesized frame.
   const hasFramings = framings.length > 0;
 
-  const [coverage, setCoverage] = useState<CoverageState>({ status: "loading" });
-
-  useEffect(() => {
-    if (hasFramings) return;
-    let cancelled = false;
-
-    fetch(`/api/event-sources?eventId=${encodeURIComponent(event.id)}`)
-      .then((response) => (response.ok ? response.json() : Promise.reject()))
-      .then((data: { articles: EventSourceArticle[] }) => {
-        if (!cancelled) setCoverage({ status: "loaded", byCountry: summarizeByCountry(data.articles) });
-      })
-      .catch(() => {
-        if (!cancelled) setCoverage({ status: "error" });
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [event.id, hasFramings]);
+  // Keyed by event id so revisiting this event's Countries tab (e.g.
+  // after navigating away and back) serves the already-fetched summary
+  // instantly from SWR's cache instead of re-fetching.
+  const { data, error } = useSWR<{ articles: EventSourceArticle[] }>(
+    hasFramings ? null : `/api/event-sources?eventId=${encodeURIComponent(event.id)}`,
+    fetcher,
+    SWR_OPTIONS
+  );
+  const coverage: CoverageState = error
+    ? { status: "error" }
+    : data
+      ? { status: "loaded", byCountry: summarizeByCountry(data.articles) }
+      : { status: "loading" };
 
   if (selectedCode) {
     const country = countries.find((c) => c.code === selectedCode);

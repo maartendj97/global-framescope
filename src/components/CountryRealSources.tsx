@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import type { Country, Event } from "@/types";
-import { Flag } from "./Flag";
-import { BackIcon, ExternalLinkIcon } from "./icons";
+import useSWR from "swr";
+import type { Country, CountrySourceArticle, CoverageTier, Event } from "@/types";
+import { BackButton } from "./BackButton";
+import { CountryHeader } from "./CountryHeader";
+import { SourceListItem } from "./SourceListItem";
+import { ExternalLinkIcon } from "./icons";
 import { formatRelativeOrDate } from "@/lib/eventDisplay";
-import type { CountrySourceArticle, CoverageTier } from "@/app/api/country-sources/route";
+import { fetcher, SWR_OPTIONS } from "@/lib/swrFetcher";
 
 type CountryRealSourcesProps = {
   country: Country;
@@ -22,7 +24,9 @@ type FetchState =
 // ToneBadge — deliberately not tones. Real per-country tone analysis is
 // a later phase; until then the only honest badge is where the coverage
 // comes from. Colors reuse the signals this view already established:
-// gray for state media, amber for mentions-only.
+// gray for state media, amber for mentions-only. Same fixed-pill
+// approach as ToneBadge, and the same WCAG check applies (gray-100/700
+// ~9.4:1, sky-100/800 ~6.5:1, amber-100/800 ~6.4:1 — all well past 4.5:1).
 type CoverageKind = "state-media" | "local-press" | "mentions-only";
 
 const COVERAGE_BADGES: Record<CoverageKind, { label: string; className: string }> = {
@@ -60,29 +64,19 @@ function coverageSummary(
 }
 
 export function CountryRealSources({ country, event, onBack }: CountryRealSourcesProps) {
-  const [state, setState] = useState<FetchState>({ status: "loading" });
-
-  // The parent keys this component by country code, so a country switch
-  // remounts it and the initial "loading" state above is always correct —
-  // no synchronous reset inside the effect needed.
-  useEffect(() => {
-    let cancelled = false;
-
-    fetch(`/api/country-sources?eventId=${encodeURIComponent(event.id)}&country=${country.code}`)
-      .then((response) => (response.ok ? response.json() : Promise.reject()))
-      .then((data: { articles: CountrySourceArticle[]; tier: CoverageTier }) => {
-        if (!cancelled) {
-          setState({ status: "loaded", articles: data.articles, tier: data.tier });
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setState({ status: "error" });
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [country.code, event.id]);
+  // Keyed by event id + country code, so switching back to a country
+  // already viewed in this session serves its coverage instantly from
+  // SWR's cache instead of re-fetching and re-showing the skeleton.
+  const { data, error } = useSWR<{ articles: CountrySourceArticle[]; tier: CoverageTier }>(
+    `/api/country-sources?eventId=${encodeURIComponent(event.id)}&country=${country.code}`,
+    fetcher,
+    SWR_OPTIONS
+  );
+  const state: FetchState = error
+    ? { status: "error" }
+    : data
+      ? { status: "loaded", articles: data.articles, tier: data.tier }
+      : { status: "loading" };
 
   const loaded = state.status === "loaded" && state.articles.length > 0 ? state : null;
   const [latest, ...others] = loaded ? loaded.articles : [];
@@ -90,26 +84,20 @@ export function CountryRealSources({ country, event, onBack }: CountryRealSource
 
   return (
     <div>
-      <button
-        type="button"
-        onClick={onBack}
-        className="-ml-2 flex min-h-11 items-center gap-1 px-2 text-sm font-medium text-muted-foreground"
-      >
-        <BackIcon className="h-4 w-4" />
-        Countries
-      </button>
+      <BackButton onClick={onBack} label="Countries" />
 
-      <div className="mt-4 flex items-center gap-3">
-        <Flag code={country.code} className="h-6 w-9" aria-hidden="true" />
-        <h3 className="font-serif text-xl text-foreground">{country.name}</h3>
-        {badge && (
-          <span
-            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${badge.className}`}
-          >
-            {badge.label}
-          </span>
-        )}
-      </div>
+      <CountryHeader
+        country={country}
+        badge={
+          badge && (
+            <span
+              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${badge.className}`}
+            >
+              {badge.label}
+            </span>
+          )
+        }
+      />
 
       <div className="mt-4 space-y-5 rounded-2xl border border-border bg-surface p-4">
         <div>
@@ -188,29 +176,13 @@ export function CountryRealSources({ country, event, onBack }: CountryRealSource
             </h4>
             <ul className="mt-2 space-y-3">
               {others.map((article) => (
-                <li key={article.url} className="text-sm">
-                  <div className="flex items-center justify-between gap-2">
-                    <a
-                      href={article.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-foreground hover:underline"
-                    >
-                      {article.title}
-                    </a>
-                    <a
-                      href={article.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={`Open ${article.title} in a new tab`}
-                    >
-                      <ExternalLinkIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    </a>
-                  </div>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {article.publisher} &middot; {formatRelativeOrDate(article.publishedAt)}
-                  </p>
-                </li>
+                <SourceListItem
+                  key={article.url}
+                  title={article.title}
+                  url={article.url}
+                  publisher={article.publisher}
+                  dateLabel={formatRelativeOrDate(article.publishedAt)}
+                />
               ))}
             </ul>
           </div>

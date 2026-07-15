@@ -1,22 +1,13 @@
 import { NextResponse } from "next/server";
 import { getCountries, getEventById } from "@/lib/data";
-import {
-  fetchCountryCoverage,
-  type CountrySourceArticle,
-  type CoverageTier,
-} from "@/app/api/country-sources/route";
-import type { CountryCode } from "@/types";
+import { fetchCountryCoverage } from "@/app/api/country-sources/route";
+import type { CountryCode, CountrySourceArticle, CoverageTier, EventSourceArticle } from "@/types";
 
 // Worst case (uncached: 5 GNews calls ~1.1s apart plus state-outlet
 // feed fetches at up to 8s each, fetched in parallel per country) is
 // ~15-25s. Current Vercel Hobby default (Fluid Compute) is 300s, so
 // this is defensive headroom, not a workaround for a known limit.
 export const maxDuration = 60;
-
-export type EventSourceArticle = CountrySourceArticle & {
-  countryCode: CountryCode;
-  tier: CoverageTier;
-};
 
 type CountryResult = { countryCode: CountryCode; tier: CoverageTier; articles: CountrySourceArticle[] };
 

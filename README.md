@@ -6,13 +6,15 @@ Global FrameScope is a mobile-first application for comparing how the same major
 
 ## Current phase
 
-**Phase 1 — UI + mock data.** The app is being built with a complete UI and user flow backed by mock data only; no real database, external APIs, AI, or authentication yet. See [docs/ROADMAP.md](docs/ROADMAP.md) for phase status.
+**Phase 1 (UI) is complete, and part of Phase 3 (real data) is live.** The app fetches real world events from GNews (with Currents as backup and direct state-media RSS feeds for Russia/China/Iran), cached in shared Upstash Redis, served through two API routes. The per-country *framing analysis* — the product's core feature — is still mock data for three illustrative events; AI-generated framing for live events is the next big milestone. No database, AI, or authentication yet. See [docs/ROADMAP.md](docs/ROADMAP.md) for exact status.
 
 ## Tech stack
 
 - [Next.js](https://nextjs.org) 16 (App Router, `src/app/`)
 - React 19 + TypeScript (strict)
 - Tailwind CSS v4
+- Upstash Redis (shared cache, via the Vercel integration)
+- Vitest (unit tests: `npm test`)
 
 > This project runs on a Next.js version with breaking changes relative to older docs/training data. See [AGENTS.md](AGENTS.md) before writing code, and check `node_modules/next/dist/docs/` for the current API.
 
@@ -23,6 +25,10 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+Without API keys the app falls back to mock events; copy `.env.example` to `.env.local` and add keys for live data.
+
+> Note: every npm script invokes its binary via `node` directly (e.g. `node node_modules/next/dist/bin/next dev`) instead of the usual bare command. The local development path contains a colon (`Documents:Global-FrameScope`), which is the PATH separator — so npm cannot put `node_modules/.bin` on PATH and bare commands like `next` or `eslint` fail with "command not found". Keep new scripts in the same style.
 
 ## Documentation
 

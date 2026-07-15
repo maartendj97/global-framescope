@@ -54,7 +54,7 @@ Settings (nav) ──> Settings (Appearance only in Phase 1)
 
 Event Detail is organized into 3 tabs, not one long scrolling page: **Overview, Countries, Differences**.
 
-1. **Overview tab** (default on open): event image, category/region/type tags, title, published date, neutral summary, and broader context. Countries live only in the Countries tab, not duplicated here.
+1. **Overview tab** (default on open): event image, category/region/type tags, title, published date, neutral summary, and broader context. Countries live only in the Countries tab, not duplicated here. *(Open question: the implementation shows a plain "category · date" row instead of region/type tag chips — see the note in [MVP_SPEC.md](MVP_SPEC.md#event-detail-page).)*
 2. **Countries tab**: all eight countries listed as rows (flag, name, a one-line main-frame label, and a tone badge — e.g. Concerned / Cautious / Critical / Neutral / Balanced / Supportive). Tapping a row opens that country's **Country Perspective** view.
 3. **Country Perspective** (opened from a Countries-tab row, with its own back navigation): tone badge, main frame, narrative summary, tone description, key focus points, terminology/wording, an Emphasized/Downplayed two-column comparison, and the sources cited for that specific country's framing — this is where per-country sources live, not a separate tab.
 4. **Differences tab**: a comparison table — one row per country, columns for Main frame and Tone — giving an at-a-glance cross-country view. (This supersedes an earlier stacked-card-only design; see [UI_DESIGN.md](UI_DESIGN.md#key-differences-ui).)

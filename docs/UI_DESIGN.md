@@ -153,7 +153,7 @@ Clear page title ("Events") with a functional search input filtering by title/su
 
 ## Event Detail UI
 
-Event Detail is a tabbed screen, not one long scroll. Top row: back button, optional share action. Below: event image; category/region/type tag chips; event title; published date; then a tab bar with 3 tabs — **Overview, Countries, Differences**.
+Event Detail is a tabbed screen, not one long scroll. Top row: back button, optional share action. Below: event image; category/region/type tag chips *(open question: currently implemented as a plain "category · date" text row — see [MVP_SPEC.md](MVP_SPEC.md#event-detail-page))*; event title; published date; then a tab bar with 3 tabs — **Overview, Countries, Differences**.
 
 **Overview tab**: a neutral summary; a broader context card/section; and a short "Perspectives" line noting how many countries cover the story, as a teaser pointing at the Countries tab. Countries are not repeated as a grid here — the entry point into a country's framing is the Countries tab.
 

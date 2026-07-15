@@ -4,7 +4,7 @@
 
 Mobile-first app for comparing how the same major international event is framed by media across different countries. Tagline: "One event, viewed through multiple national perspectives." Analysis/comparison tool, not a news reader.
 
-Currently in **Phase 1** (UI + mock data only — no DB, external APIs, AI, or auth yet).
+**Phase 1 (UI) is complete; part of Phase 3 (real data) is live**: real events come from GNews (Currents backup, state-media RSS for RU/CN/IR), cached in shared Upstash Redis (`src/lib/cache.ts` — Next's own fetch cache does not work on this Vercel setup), served via `src/app/api/*` routes. Per-country framing analysis is still mock data (3 illustrative events); no DB, AI, or auth yet. Tests run with Vitest (`npm test`).
 
 `docs/` is the source of truth for product and architecture decisions — read it before assuming anything, and don't rely on prior chat history:
 

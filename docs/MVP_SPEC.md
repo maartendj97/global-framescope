@@ -36,7 +36,7 @@ Avoid: "we provide the truth," "we remove all bias," "this country lies," "this 
 
 ## MVP strategy (three phases)
 
-### Phase 1 — UI + mock data (current phase)
+### Phase 1 — UI + mock data (complete)
 
 Build a polished mobile-first web application using mock data only.
 
@@ -50,7 +50,7 @@ Included:
 - Three illustrative international events, all eight fixed MVP countries on every event
 - TypeScript domain model, mock data, and data-access layer (done — see [ARCHITECTURE.md](ARCHITECTURE.md))
 
-Explicitly **excluded** from Phase 1:
+Explicitly **excluded** from Phase 1 (external news APIs have since landed as early Phase 3 work — see below):
 
 - real database
 - external news APIs
@@ -71,16 +71,16 @@ The architecture must still allow mock data to be replaced by database/API calls
 - source structure
 - comparison methodology
 
-### Phase 3 — Real backend
+### Phase 3 — Real backend (partially built, ahead of order)
 
 - backend and database
-- API routes
+- API routes — **done** (`/api/country-sources`, `/api/event-sources`)
 - authentication
-- real news-source ingestion
-- AI-supported analysis
+- real news-source ingestion — **done** (GNews primary, Currents backup, state-media RSS, EU-sanctions filter, shared Redis caching)
+- AI-supported analysis — the core open piece: live events show real per-country article lists, but the framing analysis itself still only exists as mock data for the 3 Phase 1 events
 - administration and content management
 
-Do not implement Phase 2 or Phase 3 work unless explicitly requested.
+Do not implement the remaining Phase 2 or Phase 3 work unless explicitly requested. [ROADMAP.md](ROADMAP.md) tracks exact status.
 
 ## Navigation (MVP)
 
@@ -125,7 +125,7 @@ Purpose: show the complete event catalogue.
 
 This is the central MVP experience. It is a **tabbed** screen — Overview, Countries, Differences — not one long scrolling page.
 
-1. **Overview tab** (default): back navigation, event image, category/region/type tags, event title, published date, neutral summary, broader event context, and a short "Perspectives" line noting the country count as a teaser toward the Countries tab. Countries are not duplicated as a grid here — see the Countries tab.
+1. **Overview tab** (default): back navigation, event image, category/region/type tags, event title, published date, neutral summary, broader event context, and a short "Perspectives" line noting the country count as a teaser toward the Countries tab. Countries are not duplicated as a grid here — see the Countries tab. *(Open question: the implementation currently shows a plain "category · date" text row; region and type fields don't exist on the `Event` model yet. Decide whether region/type tag chips are still wanted or should be dropped from this spec.)*
 2. **Countries tab**: all eight countries listed as rows (flag, name, one-line main-frame label, tone badge). Tapping a row opens a full **Country Perspective** view for that country.
 3. **Differences tab**: a comparison table, one row per country, with Main frame and Tone columns.
 

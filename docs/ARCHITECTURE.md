@@ -11,7 +11,10 @@ Inspect the repo before assuming anything has changed since this was written.
 - **Tailwind CSS v4** — CSS-first config, no `tailwind.config.ts`. Theme tokens are declared in `src/app/globals.css` via `@import "tailwindcss";` and an `@theme inline { ... }` block. Add/edit design tokens there, not in a config file.
 - **ESLint 9**, flat config only (`eslint.config.mjs`), no `.eslintrc*`
 - Path alias: `@/*` → `./src/*` (set in `tsconfig.json`)
-- No test framework, state management library, or data-fetching library installed yet. Don't add one unless it provides clear, immediate value — see AGENTS.md principle of not overengineering the MVP.
+- **Vitest** for unit tests (`npm test`) — node environment, pure-function tests for the pipeline/API logic; no component/UI test setup
+- **@upstash/redis** — shared cache via `src/lib/cache.ts` (see Caching below); **rss-parser** for state-media feeds
+- No state-management or data-fetching library installed. Don't add one unless it provides clear, immediate value — see AGENTS.md principle of not overengineering the MVP.
+- Note: every npm script invokes its binary via `node` directly (`node node_modules/next/dist/bin/next dev`) because the local development path contains a colon, which breaks PATH-based `node_modules/.bin` resolution. Keep new scripts in that style.
 
 ### Next.js 16 vs. training data
 
@@ -20,7 +23,11 @@ AGENTS.md already flags that this Next.js version has breaking changes vs. typic
 - **Middleware → Proxy**: the file is now `proxy.js`/`proxy.ts`, not `middleware.ts`.
 - **Cache Components**: caching/revalidation now goes through the `"use cache"` directive, `cacheLife()`, `cacheTag()`, `updateTag()` — not the older `revalidatePath`/`revalidateTag`-only model.
 
-Neither is relevant to Phase 1 (no data mutations, no caching needs with mock data). Relevant once Phase 3 introduces a backend. Always check `node_modules/next/dist/docs/` for the exact current API before writing code that touches routing, caching, or Server Actions.
+Always check `node_modules/next/dist/docs/` for the exact current API before writing code that touches routing, caching, or Server Actions.
+
+### Caching (real, in production)
+
+Next's own fetch cache was confirmed **not to work** on this Vercel setup (see the events-pool drift bug). All server-side caching goes through `src/lib/cache.ts` — a thin Upstash Redis wrapper (`getCached`/`setCached`) shared by every server instance, degrading gracefully to no-ops when the `KV_REST_API_*` env vars are absent (local dev). Current TTLs: events pool 3h, per-event records 7d, GNews coverage 24h, state RSS feeds 20min, GNews daily-usage counter 48h. Do **not** rely on `fetch` caching, `revalidate`, or `"use cache"` for anything that must actually be cached — use `src/lib/cache.ts`.
 
 ## Layer separation
 
@@ -28,13 +35,16 @@ The codebase must keep these concerns separate so mock data can be swapped for r
 
 ```
 src/app/            route & page logic (App Router)
+src/app/api/         route handlers (country-sources, event-sources)
 src/components/      reusable UI components (presentational)
 src/types/            TypeScript domain types (Event, CountryFraming, Source, ...)
 src/data/             mock data (raw fixtures — not imported directly by UI)
 src/lib/data/         data-access layer (getEvents, getEventById, ...)
+src/lib/external/     news-source integrations (gnews, currents, stateFeeds, budget guard, sanctions filter)
+src/lib/cache.ts      shared Upstash Redis cache wrapper
 ```
 
-Exact folder names may be adjusted when Phase 1 implementation starts, but the separation itself is a hard requirement, not a suggestion.
+The separation itself is a hard requirement, not a suggestion.
 
 ### Data-access layer
 
@@ -53,14 +63,16 @@ Domain types (`Event`, `CountryFraming`, `Source`, `Country`, etc.) live in `src
 
 ## Country model
 
-The fixed MVP country list (see [MVP_SPEC.md](MVP_SPEC.md#fixed-mvp-countries)) should not be hardcoded into UI components. Model it so that:
+The fixed MVP country list (see [MVP_SPEC.md](MVP_SPEC.md#fixed-mvp-countries)) should not be hardcoded into UI components:
 
-- the full country list is defined once (e.g. a `Country[]` constant or type),
-- each event can reference a subset of countries (event-specific availability), rather than assuming every event has framing for all 8 countries.
+- the full country list is defined once — `ALL_COUNTRY_CODES` in `src/types/country.ts`; the mock `Country[]` records and both news sources derive from it,
+- each event references a subset of countries (`availableCountries`), rather than assuming every event has framing for all 8 countries.
 
 ## What not to build yet
 
-Per the MVP strategy, do not add in Phase 1: a real database, external news APIs, AI integrations, authentication, payments, push notifications, or native mobile functionality. Do not introduce a state-management library, testing framework, or CSS-in-JS solution unless a concrete Phase 1 need arises — keep the dependency list close to what's already installed.
+Already built (originally Phase 3 items, landed early): external news APIs (GNews, Currents, state-media RSS), shared Redis caching, API routes, and a Vitest test suite.
+
+Still out of scope until explicitly requested: a real database, AI integrations (including AI-generated framing), authentication, payments, push notifications, and native mobile functionality. Do not introduce a state-management library or CSS-in-JS solution unless a concrete need arises — keep the dependency list close to what's already installed.
 
 ## Design tokens & styling
 
@@ -68,11 +80,11 @@ Mobile-first, Tailwind utility classes, rounded cards/controls, calm visual styl
 
 ## Theming & appearance
 
-Light/dark theme is a confirmed Phase 1 requirement (System / Light / Dark, per [MVP_SPEC.md](MVP_SPEC.md#settings-page)). This section covers the mechanism only — see [UI_DESIGN.md](UI_DESIGN.md) for the actual token values.
+Light/dark theme is a confirmed Phase 1 requirement (Light / Dark, per [MVP_SPEC.md](MVP_SPEC.md#settings-page)). This section covers the mechanism only — see [UI_DESIGN.md](UI_DESIGN.md) for the actual token values.
 
 - Represent the active theme with a `data-theme` attribute (or equivalent class) on the root element, driving CSS custom properties defined in `src/app/globals.css`.
-- Store the user's explicit choice (`system` / `light` / `dark`) in `localStorage`; no backend or account involved in Phase 1.
-- When set to `system`, resolve via `prefers-color-scheme` and keep it responsive to OS-level changes.
+- Store the user's explicit choice (`light` / `dark`) in `localStorage`; no backend or account involved.
+- On first visit (no stored choice yet), snapshot the OS `prefers-color-scheme` once as the initial value — from then on it's a fixed explicit choice, not a live-following "system" mode.
 - Use a small early/inline theme-initialization step so the correct theme applies before first paint, avoiding a flash of the wrong theme.
 - Load Playfair Display and Inter via `next/font/google` — no extra font package needed.
 - No new state-management dependency is needed for this — plain React state/context plus `localStorage` is sufficient at this scale.

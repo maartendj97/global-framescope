@@ -1,4 +1,4 @@
-import type { Event, EventCategory } from "@/types";
+import type { Country, Event, EventCategory } from "@/types";
 
 export const CATEGORY_LABELS: Record<EventCategory, string> = {
   conflict: "Conflict",
@@ -32,6 +32,10 @@ export function getEventImageSrc(event: Event): string {
 
 export function isExternalEventImage(event: Event): boolean {
   return Boolean(event.imageUrl);
+}
+
+export function filterEventCountries(countries: Country[], event: Event): Country[] {
+  return countries.filter((country) => event.availableCountries.includes(country.code));
 }
 
 export function formatEventDate(isoDate: string): string {

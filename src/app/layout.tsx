@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Playfair_Display, Inter } from "next/font/google";
 import { MotionConfig } from "motion/react";
 import "./globals.css";
@@ -13,10 +13,34 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
+const SITE_NAME = "Global FrameScope";
+const SITE_DESCRIPTION = "Compare international framing, country by country.";
+
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
-  title: "Global FrameScope",
-  description: "Compare international framing, country by country.",
+  title: { default: SITE_NAME, template: `%s | ${SITE_NAME}` },
+  description: SITE_DESCRIPTION,
+  openGraph: {
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    siteName: SITE_NAME,
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+  },
+};
+
+// Matches --background in globals.css for each theme, so the browser
+// chrome (address bar, etc.) reads as an extension of the page rather
+// than a mismatched system default.
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f5f3ef" },
+    { media: "(prefers-color-scheme: dark)", color: "#07111e" },
+  ],
 };
 
 // On first visit (no stored choice yet), snapshot the OS color-scheme once

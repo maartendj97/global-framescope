@@ -5,11 +5,11 @@ import Link from "next/link";
 import { motion } from "motion/react";
 import type { Country, Event } from "@/types";
 import { BookmarkButton } from "./BookmarkButton";
+import { EventMeta } from "./EventMeta";
 import { Flag } from "./Flag";
 import { ChevronRightIcon } from "./icons";
 import {
-  CATEGORY_LABELS,
-  formatEventDate,
+  filterEventCountries,
   getEventImageSrc,
   isExternalEventImage,
 } from "@/lib/eventDisplay";
@@ -33,17 +33,9 @@ export function EventCard({
   const isFeatured = variant === "featured";
   const isSecondary = variant === "secondary";
   const isList = variant === "list";
-  const eventCountries = countries.filter((country) =>
-    event.availableCountries.includes(country.code)
-  );
+  const eventCountries = filterEventCountries(countries, event);
 
-  const meta = (
-    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-      <span>{CATEGORY_LABELS[event.category]}</span>
-      <span aria-hidden="true">·</span>
-      <span>{formatEventDate(event.date)}</span>
-    </div>
-  );
+  const meta = <EventMeta category={event.category} date={event.date} />;
 
   const flagsAndSources = (
     <div className="flex items-center justify-between">

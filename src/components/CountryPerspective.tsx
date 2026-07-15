@@ -1,7 +1,8 @@
 import type { Country, CountryFraming, Source } from "@/types";
 import { ToneBadge } from "./ToneBadge";
-import { Flag } from "./Flag";
-import { BackIcon, ExternalLinkIcon } from "./icons";
+import { BackButton } from "./BackButton";
+import { CountryHeader } from "./CountryHeader";
+import { SourceListItem } from "./SourceListItem";
 import { ShareButton } from "./ShareButton";
 import { formatEventDate } from "@/lib/eventDisplay";
 
@@ -23,25 +24,14 @@ export function CountryPerspective({
   return (
     <div>
       <div className="flex items-center justify-between">
-        <button
-          type="button"
-          onClick={onBack}
-          className="-ml-2 flex min-h-11 items-center gap-1 px-2 text-sm font-medium text-muted-foreground"
-        >
-          <BackIcon className="h-4 w-4" />
-          Countries
-        </button>
+        <BackButton onClick={onBack} label="Countries" />
         <ShareButton
           title={`${country.name}'s perspective: ${eventTitle}`}
           text={framing.mainFrame}
         />
       </div>
 
-      <div className="mt-4 flex items-center gap-3">
-        <Flag code={country.code} className="h-6 w-9" aria-hidden="true" />
-        <h3 className="font-serif text-xl text-foreground">{country.name}</h3>
-        <ToneBadge tone={framing.toneCategory} />
-      </div>
+      <CountryHeader country={country} badge={<ToneBadge tone={framing.toneCategory} />} />
 
       <div className="mt-4 space-y-5 rounded-2xl border border-border bg-surface p-4">
         <div>
@@ -122,24 +112,13 @@ export function CountryPerspective({
           </h4>
           <ul className="mt-2 space-y-2">
             {sources.map((source) => (
-              <li key={source.id} className="text-sm">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-foreground">{source.title}</span>
-                  {source.url && (
-                    <a
-                      href={source.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={`Open ${source.title} in a new tab`}
-                    >
-                      <ExternalLinkIcon className="h-4 w-4 text-muted-foreground" />
-                    </a>
-                  )}
-                </div>
-                <span className="text-xs text-muted-foreground">
-                  {source.publisher} &middot; {formatEventDate(source.publishedAt)}
-                </span>
-              </li>
+              <SourceListItem
+                key={source.id}
+                title={source.title}
+                url={source.url}
+                publisher={source.publisher}
+                dateLabel={formatEventDate(source.publishedAt)}
+              />
             ))}
           </ul>
         </div>

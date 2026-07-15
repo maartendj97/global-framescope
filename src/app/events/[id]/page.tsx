@@ -17,12 +17,23 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   const event = await getEventById(id);
-  if (!event) return {};
+  if (!event) {
+    // The event may have rotated out of the live pool or been an
+    // invalid link — notFound() below still renders the branded 404,
+    // this just keeps that page from inheriting a stale/blank title.
+    return { title: "Event not found" };
+  }
 
   return {
-    title: `${event.title} | Global FrameScope`,
+    title: event.title,
     description: event.summary,
     openGraph: {
+      title: event.title,
+      description: event.summary,
+      images: [getEventImageSrc(event)],
+    },
+    twitter: {
+      card: "summary_large_image",
       title: event.title,
       description: event.summary,
       images: [getEventImageSrc(event)],

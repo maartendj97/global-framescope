@@ -5,13 +5,9 @@ import Image from "next/image";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import type { Country, CountryFraming, Event, KeyDifference, Source } from "@/types";
-import { BackIcon } from "./icons";
-import {
-  CATEGORY_LABELS,
-  formatEventDate,
-  getEventImageSrc,
-  isExternalEventImage,
-} from "@/lib/eventDisplay";
+import { BackButton } from "./BackButton";
+import { EventMeta } from "./EventMeta";
+import { filterEventCountries, getEventImageSrc, isExternalEventImage } from "@/lib/eventDisplay";
 import { getFadeSlideVariants, getTransition, useReducedMotion } from "@/lib/motionConfig";
 import { CountriesTab } from "./CountriesTab";
 import { DifferencesTable } from "./DifferencesTable";
@@ -44,9 +40,7 @@ export function EventDetailView({
   const prefersReducedMotion = useReducedMotion();
   const fadeSlideVariants = getFadeSlideVariants(prefersReducedMotion);
   const transition = getTransition(prefersReducedMotion);
-  const eventCountries = countries.filter((country) =>
-    event.availableCountries.includes(country.code)
-  );
+  const eventCountries = filterEventCountries(countries, event);
 
   // A shared or bookmarked deep link opens with no in-app history, so a
   // bare router.back() would leave the site (or do nothing). The events
@@ -62,21 +56,14 @@ export function EventDetailView({
   return (
     <div className="mx-auto w-full max-w-md px-4 pt-6 pb-10 md:max-w-[960px]">
       <div className="flex items-center justify-between">
-        <button
-          type="button"
-          onClick={handleBack}
-          className="-ml-2 flex min-h-11 items-center gap-1 px-2 text-sm font-medium text-muted-foreground"
-        >
-          <BackIcon className="h-4 w-4" />
-          Back
-        </button>
+        <BackButton onClick={handleBack} />
         <ShareButton title={event.title} text={event.summary} />
       </div>
 
       <div className="relative mt-4 aspect-video w-full overflow-hidden rounded-2xl">
         <Image
           src={getEventImageSrc(event)}
-          alt=""
+          alt={event.title}
           fill
           className="object-cover"
           sizes="(min-width: 768px) 960px, 100vw"
@@ -85,10 +72,8 @@ export function EventDetailView({
         />
       </div>
 
-      <div className="mt-4 flex items-center gap-2 text-xs font-medium text-muted-foreground">
-        <span>{CATEGORY_LABELS[event.category]}</span>
-        <span aria-hidden="true">·</span>
-        <span>{formatEventDate(event.date)}</span>
+      <div className="mt-4">
+        <EventMeta category={event.category} date={event.date} />
       </div>
       <h1 className="mt-2 font-serif text-2xl leading-snug text-foreground">
         {event.title}

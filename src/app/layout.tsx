@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Playfair_Display, Inter } from "next/font/google";
 import { MotionConfig } from "motion/react";
+import { getSiteUrl } from "@/lib/siteUrl";
 import "./globals.css";
 
 const playfairDisplay = Playfair_Display({
@@ -17,7 +18,7 @@ const SITE_NAME = "Global FrameScope";
 const SITE_DESCRIPTION = "Compare international framing, country by country.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+  metadataBase: new URL(getSiteUrl()),
   title: { default: SITE_NAME, template: `%s | ${SITE_NAME}` },
   description: SITE_DESCRIPTION,
   openGraph: {

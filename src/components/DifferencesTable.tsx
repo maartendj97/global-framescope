@@ -1,5 +1,6 @@
 import type { Country, CountryFraming } from "@/types";
 import { ToneBadge } from "./ToneBadge";
+import { Flag } from "./Flag";
 
 type DifferencesTableProps = {
   countries: Country[];
@@ -44,9 +45,7 @@ export function DifferencesTable({ countries, framings }: DifferencesTableProps)
               return (
                 <tr key={country.code} className="border-b border-border last:border-0">
                   <td className="px-3 py-2 whitespace-nowrap text-foreground">
-                    <span className="mr-1" aria-hidden="true">
-                      {country.flagEmoji}
-                    </span>
+                    <Flag code={country.code} className="mr-1.5 h-3.5 w-5" aria-hidden="true" />
                     {country.name}
                   </td>
                   <td className="px-3 py-2 text-foreground">{framing.mainFrame}</td>

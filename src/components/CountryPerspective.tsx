@@ -1,5 +1,6 @@
 import type { Country, CountryFraming, Source } from "@/types";
 import { ToneBadge } from "./ToneBadge";
+import { Flag } from "./Flag";
 import { BackIcon, ExternalLinkIcon } from "./icons";
 import { ShareButton } from "./ShareButton";
 import { formatEventDate } from "@/lib/eventDisplay";
@@ -37,9 +38,7 @@ export function CountryPerspective({
       </div>
 
       <div className="mt-4 flex items-center gap-3">
-        <span className="text-2xl" aria-hidden="true">
-          {country.flagEmoji}
-        </span>
+        <Flag code={country.code} className="h-6 w-9" aria-hidden="true" />
         <h3 className="font-serif text-xl text-foreground">{country.name}</h3>
         <ToneBadge tone={framing.toneCategory} />
       </div>

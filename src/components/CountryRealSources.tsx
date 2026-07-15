@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Country, Event } from "@/types";
+import { Flag } from "./Flag";
 import { BackIcon, ExternalLinkIcon } from "./icons";
 import { formatRelativeOrDate } from "@/lib/eventDisplay";
 import type { CountrySourceArticle, CoverageTier } from "@/app/api/country-sources/route";
@@ -99,9 +100,7 @@ export function CountryRealSources({ country, event, onBack }: CountryRealSource
       </button>
 
       <div className="mt-4 flex items-center gap-3">
-        <span className="text-2xl" aria-hidden="true">
-          {country.flagEmoji}
-        </span>
+        <Flag code={country.code} className="h-6 w-9" aria-hidden="true" />
         <h3 className="font-serif text-xl text-foreground">{country.name}</h3>
         {badge && (
           <span

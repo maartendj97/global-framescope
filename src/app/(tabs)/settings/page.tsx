@@ -2,6 +2,8 @@
 
 import { useSyncExternalStore } from "react";
 import * as RadioGroup from "@radix-ui/react-radio-group";
+import { motion } from "motion/react";
+import { getLayoutTransition, useReducedMotion } from "@/lib/motionConfig";
 import { applyTheme, getStoredPreference, type ThemePreference } from "@/lib/theme";
 
 const OPTIONS: { value: ThemePreference; label: string }[] = [
@@ -22,6 +24,7 @@ function getServerSnapshot(): ThemePreference {
 
 export default function SettingsPage() {
   const preference = useSyncExternalStore(subscribe, getStoredPreference, getServerSnapshot);
+  const prefersReducedMotion = useReducedMotion();
 
   function handleSelect(value: ThemePreference) {
     applyTheme(value);
@@ -44,9 +47,18 @@ export default function SettingsPage() {
             <RadioGroup.Item
               key={option.value}
               value={option.value}
-              className="flex min-h-11 flex-1 items-center justify-center rounded-full px-3 text-sm font-medium text-muted-foreground transition-colors data-[state=checked]:bg-foreground data-[state=checked]:text-inverse-foreground"
+              className={`relative flex min-h-11 flex-1 items-center justify-center rounded-full px-3 text-sm font-medium ${
+                preference === option.value ? "text-inverse-foreground" : "text-muted-foreground"
+              }`}
             >
-              {option.label}
+              {preference === option.value && (
+                <motion.div
+                  layoutId="theme-thumb"
+                  className="absolute inset-0 rounded-full bg-foreground"
+                  transition={getLayoutTransition(prefersReducedMotion)}
+                />
+              )}
+              <span className="relative">{option.label}</span>
             </RadioGroup.Item>
           ))}
         </RadioGroup.Root>

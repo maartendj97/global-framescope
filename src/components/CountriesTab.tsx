@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import type { Country, CountryCode, CountryFraming, Event, Source } from "@/types";
 import { ToneBadge } from "./ToneBadge";
+import { Flag } from "./Flag";
 import { ChevronRightIcon } from "./icons";
 import { CountryPerspective } from "./CountryPerspective";
 import { CountryRealSources } from "./CountryRealSources";
+import { StaggerItem } from "./StaggerItem";
 import type { EventSourceArticle } from "@/app/api/event-sources/route";
 
 type CountriesTabProps = {
@@ -118,41 +120,41 @@ export function CountriesTab({ event, countries, framings, sources }: CountriesT
         Choose a country to view its perspective
       </h3>
       <div className="mt-3 space-y-2">
-        {countries.map((country) => {
-          const framing = framingByCode.get(country.code);
-          if (hasFramings && !framing) return null;
-          return (
-            <button
-              key={country.code}
-              type="button"
-              onClick={() => setSelectedCode(country.code)}
-              className="flex w-full items-center gap-3 rounded-2xl border border-border bg-surface p-3 text-left shadow-sm transition-shadow hover:shadow-md"
-            >
-              <span className="text-xl" aria-hidden="true">
-                {country.flagEmoji}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-foreground">{country.name}</p>
-                {framing ? (
-                  <>
-                    <p className="text-xs font-medium text-muted-foreground">
-                      {framing.mainFrame}
-                    </p>
-                    <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
-                      {framing.mainNarrative}
-                    </p>
-                  </>
-                ) : (
-                  <p className="truncate text-xs text-muted-foreground">
-                    {liveRowSubtitle(coverage, country.code)}
-                  </p>
-                )}
-              </div>
-              {framing && <ToneBadge tone={framing.toneCategory} />}
-              <ChevronRightIcon className="h-5 w-5 shrink-0 text-muted-foreground" />
-            </button>
-          );
-        })}
+        {countries
+          .filter((country) => !hasFramings || framingByCode.has(country.code))
+          .map((country, index) => {
+            const framing = framingByCode.get(country.code);
+            return (
+              <StaggerItem key={country.code} index={index}>
+                <button
+                  type="button"
+                  onClick={() => setSelectedCode(country.code)}
+                  className="flex w-full items-center gap-3 rounded-2xl border border-border bg-surface p-3 text-left shadow-sm transition-shadow hover:shadow-md"
+                >
+                  <Flag code={country.code} className="h-5 w-7 shrink-0" aria-hidden="true" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-foreground">{country.name}</p>
+                    {framing ? (
+                      <>
+                        <p className="text-xs font-medium text-muted-foreground">
+                          {framing.mainFrame}
+                        </p>
+                        <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                          {framing.mainNarrative}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="truncate text-xs text-muted-foreground">
+                        {liveRowSubtitle(coverage, country.code)}
+                      </p>
+                    )}
+                  </div>
+                  {framing && <ToneBadge tone={framing.toneCategory} />}
+                  <ChevronRightIcon className="h-5 w-5 shrink-0 text-muted-foreground" />
+                </button>
+              </StaggerItem>
+            );
+          })}
       </div>
     </div>
   );

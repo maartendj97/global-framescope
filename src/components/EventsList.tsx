@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ALL_CATEGORIES } from "@/types";
 import type { Country, Event, EventCategory } from "@/types";
 import { EventCard } from "./EventCard";
+import { StaggerItem } from "./StaggerItem";
 import { CATEGORY_LABELS } from "@/lib/eventDisplay";
 import { useBookmarkedIds } from "@/lib/bookmarks";
 import { BookmarkIcon, SearchIcon } from "./icons";
@@ -77,14 +78,15 @@ export function EventsList({ events, countries, sourceCountByEventId }: EventsLi
             No events match right now.
           </p>
         )}
-        {filteredEvents.map((event) => (
-          <EventCard
-            key={event.id}
-            event={event}
-            countries={countries}
-            sourceCount={sourceCountByEventId.get(event.id) ?? 0}
-            variant="list"
-          />
+        {filteredEvents.map((event, index) => (
+          <StaggerItem key={event.id} index={index}>
+            <EventCard
+              event={event}
+              countries={countries}
+              sourceCount={sourceCountByEventId.get(event.id) ?? 0}
+              variant="list"
+            />
+          </StaggerItem>
         ))}
       </div>
     </>

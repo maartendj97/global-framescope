@@ -2,6 +2,7 @@
 
 import * as Tabs from "@radix-ui/react-tabs";
 import Image from "next/image";
+import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import type { Country, CountryFraming, Event, KeyDifference, Source } from "@/types";
 import { BackIcon } from "./icons";
@@ -11,6 +12,7 @@ import {
   getEventImageSrc,
   isExternalEventImage,
 } from "@/lib/eventDisplay";
+import { getFadeSlideVariants, getTransition, useReducedMotion } from "@/lib/motionConfig";
 import { CountriesTab } from "./CountriesTab";
 import { DifferencesTable } from "./DifferencesTable";
 import { ShareButton } from "./ShareButton";
@@ -39,6 +41,9 @@ export function EventDetailView({
   sources,
 }: EventDetailViewProps) {
   const router = useRouter();
+  const prefersReducedMotion = useReducedMotion();
+  const fadeSlideVariants = getFadeSlideVariants(prefersReducedMotion);
+  const transition = getTransition(prefersReducedMotion);
   const eventCountries = countries.filter((country) =>
     event.availableCountries.includes(country.code)
   );
@@ -94,8 +99,14 @@ export function EventDetailView({
           ))}
         </Tabs.List>
 
-        <Tabs.Content value="overview" className="mt-5">
-          <div className="space-y-5">
+        <Tabs.Content value="overview" asChild>
+          <motion.div
+            className="mt-5 space-y-5"
+            variants={fadeSlideVariants}
+            initial="hidden"
+            animate="visible"
+            transition={transition}
+          >
             <div>
               <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Summary
@@ -120,20 +131,34 @@ export function EventDetailView({
                 one frames it.
               </p>
             </div>
-          </div>
+          </motion.div>
         </Tabs.Content>
 
-        <Tabs.Content value="countries" className="mt-5">
-          <CountriesTab
-            event={event}
-            countries={eventCountries}
-            framings={framings}
-            sources={sources}
-          />
+        <Tabs.Content value="countries" asChild>
+          <motion.div
+            className="mt-5"
+            variants={fadeSlideVariants}
+            initial="hidden"
+            animate="visible"
+            transition={transition}
+          >
+            <CountriesTab
+              event={event}
+              countries={eventCountries}
+              framings={framings}
+              sources={sources}
+            />
+          </motion.div>
         </Tabs.Content>
 
-        <Tabs.Content value="differences" className="mt-5">
-          <div className="space-y-5">
+        <Tabs.Content value="differences" asChild>
+          <motion.div
+            className="mt-5 space-y-5"
+            variants={fadeSlideVariants}
+            initial="hidden"
+            animate="visible"
+            transition={transition}
+          >
             <div className="space-y-3">
               {keyDifferences.map((difference) => (
                 <div
@@ -150,7 +175,7 @@ export function EventDetailView({
               ))}
             </div>
             <DifferencesTable countries={eventCountries} framings={framings} />
-          </div>
+          </motion.div>
         </Tabs.Content>
       </Tabs.Root>
     </div>

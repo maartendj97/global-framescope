@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Playfair_Display, Inter } from "next/font/google";
+import { MotionConfig } from "motion/react";
 import "./globals.css";
 
 const playfairDisplay = Playfair_Display({
@@ -36,7 +37,11 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
-        {children}
+        {/* Global safety net: any motion gesture (whileTap/whileHover) added
+            anywhere automatically respects the OS reduced-motion setting,
+            on top of the explicit checks in src/lib/motionConfig.ts used
+            for mount/layout animations. */}
+        <MotionConfig reducedMotion="user">{children}</MotionConfig>
       </body>
     </html>
   );

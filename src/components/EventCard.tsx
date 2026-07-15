@@ -1,7 +1,11 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { motion } from "motion/react";
 import type { Country, Event } from "@/types";
 import { BookmarkButton } from "./BookmarkButton";
+import { Flag } from "./Flag";
 import { ChevronRightIcon } from "./icons";
 import {
   CATEGORY_LABELS,
@@ -9,6 +13,9 @@ import {
   getEventImageSrc,
   isExternalEventImage,
 } from "@/lib/eventDisplay";
+import { TAP_SCALE_SUBTLE } from "@/lib/motionConfig";
+
+const MotionLink = motion.create(Link);
 
 type EventCardProps = {
   event: Event;
@@ -40,10 +47,10 @@ export function EventCard({
 
   const flagsAndSources = (
     <div className="flex items-center justify-between">
-      <div className="flex gap-1 text-sm" aria-label="Countries covered">
+      <div className="flex gap-1" aria-label="Countries covered">
         {eventCountries.map((country) => (
           <span key={country.code} title={country.name}>
-            {country.flagEmoji}
+            <Flag code={country.code} className="h-3.5 w-5" />
           </span>
         ))}
       </div>
@@ -55,8 +62,9 @@ export function EventCard({
 
   if (isFeatured || isSecondary) {
     return (
-      <Link
+      <MotionLink
         href={`/events/${event.id}`}
+        whileTap={{ scale: TAP_SCALE_SUBTLE }}
         className="block rounded-3xl border border-border bg-surface p-3 shadow-sm transition-shadow hover:shadow-md"
       >
         <div className="relative aspect-video w-full overflow-hidden rounded-2xl">
@@ -88,13 +96,14 @@ export function EventCard({
           </p>
           {flagsAndSources}
         </div>
-      </Link>
+      </MotionLink>
     );
   }
 
   return (
-    <Link
+    <MotionLink
       href={`/events/${event.id}`}
+      whileTap={{ scale: TAP_SCALE_SUBTLE }}
       className={`flex gap-3 rounded-2xl border border-border bg-surface p-3 shadow-sm transition-shadow hover:shadow-md ${
         isList ? "items-stretch" : "items-center"
       }`}
@@ -131,6 +140,6 @@ export function EventCard({
           <ChevronRightIcon className="h-5 w-5 text-muted-foreground" />
         </div>
       )}
-    </Link>
+    </MotionLink>
   );
 }

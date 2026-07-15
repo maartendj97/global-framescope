@@ -183,7 +183,7 @@ No other cards in Phase 1 — no fake working controls for features that don't e
 
 ## Images and icons
 
-Prefer local event imagery in `public/` for a stable mock build, with a consistent crop and overlay treatment. If real images aren't available, use calm editorial placeholder visuals rather than random stock imagery. Icons should be consistent line icons — inline SVG or an existing project-supported approach; don't add a package solely for a handful of icons without approval.
+Prefer local event imagery in `public/` for a stable mock build, with a consistent crop and overlay treatment. If real images aren't available, use calm editorial placeholder visuals rather than random stock imagery. Icons should be consistent line icons — inline SVG or an existing project-supported approach; don't add a package solely for a handful of icons without approval. Country flags are rendered via `country-flag-icons` (`src/components/Flag.tsx`), not raw emoji — flag emoji render as plain text on Windows and some Linux setups, since those platforms lack flag-emoji glyphs.
 
 ## Interaction and accessibility
 
@@ -195,6 +195,10 @@ Prefer local event imagery in `public/` for a stable mock build, with a consiste
 - Light and dark contrast must remain accessible
 - Avoid horizontal page scrolling
 - External links should be clearly indicated
+
+### Motion
+
+A small, deliberate set of micro-interactions uses `motion` (`motion/react`) — not a general animation system (see "Complex animations" below). Every animated component reads its timing from the shared config in `src/lib/motionConfig.ts` rather than inventing its own: ~180ms `easeOut` for fades, a damped spring (`stiffness: 380, damping: 30`) for `layoutId`-tracked sliding elements (the bottom-nav active pill, the Settings theme thumb), and a ~40ms per-item stagger for list mount-ins (Home, Events, Countries rows). `prefers-reduced-motion` is handled two ways: `motionConfig.ts`'s helpers collapse transitions/variants to instant for mount and layout animations, and `<MotionConfig reducedMotion="user">` in the root layout automatically strips gesture animations (`whileTap`/`whileHover`) app-wide. New animated components should reuse `motionConfig.ts` rather than hand-rolling a new duration/easing.
 
 ## Out of scope for Phase 1 UI
 

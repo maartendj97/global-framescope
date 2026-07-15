@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion } from "motion/react";
+import { getLayoutTransition, useReducedMotion } from "@/lib/motionConfig";
 import { AboutIcon, EventsIcon, HomeIcon, SettingsIcon } from "./icons";
 
 const NAV_ITEMS = [
@@ -13,6 +15,7 @@ const NAV_ITEMS = [
 
 export function BottomNav() {
   const pathname = usePathname();
+  const prefersReducedMotion = useReducedMotion();
 
   return (
     <nav
@@ -27,14 +30,19 @@ export function BottomNav() {
               key={href}
               href={href}
               aria-current={isActive ? "page" : undefined}
-              className={`flex flex-1 flex-col items-center gap-0.5 rounded-full px-2 py-2 text-xs font-medium transition-colors ${
-                isActive
-                  ? "bg-foreground text-inverse-foreground"
-                  : "text-muted-foreground"
+              className={`relative flex flex-1 flex-col items-center gap-0.5 rounded-full px-2 py-2 text-xs font-medium ${
+                isActive ? "text-inverse-foreground" : "text-muted-foreground"
               }`}
             >
-              <Icon className="h-5 w-5" />
-              <span>{label}</span>
+              {isActive && (
+                <motion.div
+                  layoutId="nav-active-pill"
+                  className="absolute inset-0 rounded-full bg-foreground"
+                  transition={getLayoutTransition(prefersReducedMotion)}
+                />
+              )}
+              <Icon className="relative h-5 w-5" />
+              <span className="relative">{label}</span>
             </Link>
           );
         })}

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getCountries, getEvents, getSourceCountsByEventIds } from "@/lib/data";
 import { EventCard } from "@/components/EventCard";
+import { StaggerItem } from "@/components/StaggerItem";
 
 export default async function HomePage() {
   const [events, countries] = await Promise.all([getEvents(), getCountries()]);
@@ -48,14 +49,15 @@ export default async function HomePage() {
             </Link>
           </div>
           <div className="space-y-5">
-            {otherEvents.map((event) => (
-              <EventCard
-                key={event.id}
-                event={event}
-                countries={countries}
-                sourceCount={sourceCountByEventId.get(event.id) ?? 0}
-                variant="secondary"
-              />
+            {otherEvents.map((event, index) => (
+              <StaggerItem key={event.id} index={index}>
+                <EventCard
+                  event={event}
+                  countries={countries}
+                  sourceCount={sourceCountByEventId.get(event.id) ?? 0}
+                  variant="secondary"
+                />
+              </StaggerItem>
             ))}
           </div>
         </section>

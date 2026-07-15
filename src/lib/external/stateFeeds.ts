@@ -124,7 +124,10 @@ async function fetchFeedItems(url: string): Promise<StateFeedItem[]> {
       signal: AbortSignal.timeout(8000),
       headers: { "user-agent": "Mozilla/5.0 (compatible; FrameScope/1.0)" },
     });
-    if (!response.ok) return [];
+    if (!response.ok) {
+      console.error(`[statefeeds] ${url} responded ${response.status}`);
+      return [];
+    }
     const xml = await response.text();
     const feed = await parser.parseString(xml);
     const items: StateFeedItem[] = feed.items.map((item) => ({
@@ -137,7 +140,8 @@ async function fetchFeedItems(url: string): Promise<StateFeedItem[]> {
     feedCache.set(url, { items, expiresAt: Date.now() + FEED_CACHE_TTL_MS });
     await setCached(cacheKey, items, FEED_CACHE_TTL_SECONDS);
     return items;
-  } catch {
+  } catch (error) {
+    console.error(`[statefeeds] ${url} fetch failed:`, error);
     return [];
   }
 }

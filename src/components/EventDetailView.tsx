@@ -48,12 +48,23 @@ export function EventDetailView({
     event.availableCountries.includes(country.code)
   );
 
+  // A shared or bookmarked deep link opens with no in-app history, so a
+  // bare router.back() would leave the site (or do nothing). The events
+  // list is the natural place such visitors land instead.
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/events");
+    }
+  };
+
   return (
     <div className="mx-auto w-full max-w-md px-4 pt-6 pb-10 md:max-w-[960px]">
       <div className="flex items-center justify-between">
         <button
           type="button"
-          onClick={() => router.back()}
+          onClick={handleBack}
           className="-ml-2 flex min-h-11 items-center gap-1 px-2 text-sm font-medium text-muted-foreground"
         >
           <BackIcon className="h-4 w-4" />

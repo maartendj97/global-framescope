@@ -1,5 +1,5 @@
-import { ALL_CATEGORIES } from "@/types";
-import type { CountryCode, Event, EventCategory } from "@/types";
+import { ALL_CATEGORIES, ALL_COUNTRY_CODES } from "@/types";
+import type { Event, EventCategory } from "@/types";
 import { isSanctionedPublisher } from "./blockedPublishers";
 
 // Currents API is a backup news source for the events pool: it only runs
@@ -11,8 +11,6 @@ import { isSanctionedPublisher } from "./blockedPublishers";
 const CURRENTS_ENDPOINT = "https://api.currentsapi.services/v1/search";
 
 const MAX_TOTAL_EVENTS = 10;
-
-const ALL_COUNTRIES: CountryCode[] = ["NL", "US", "RU", "CN", "IN", "IR", "UA", "DE"];
 
 // Currents' keyword search doesn't use GNews's quoted-OR query language,
 // so each category maps to one distinctive phrase. These are a starting
@@ -56,7 +54,7 @@ function mapArticleToEvent(article: CurrentsArticle, category: EventCategory): E
     date: article.published.slice(0, 10),
     summary: article.description || article.title,
     context: `Reported by ${publisher}. Full coverage available via the original source.`,
-    availableCountries: ALL_COUNTRIES,
+    availableCountries: [...ALL_COUNTRY_CODES],
     imageUrl,
   };
 }
@@ -84,10 +82,14 @@ async function fetchCurrentsCategory(
       headers: { Authorization: apiKey },
       signal: AbortSignal.timeout(5000),
     });
-    if (!response.ok) return [];
+    if (!response.ok) {
+      console.error(`[currents] events:${category} responded ${response.status}`);
+      return [];
+    }
     const data = (await response.json()) as { news?: CurrentsArticle[] };
     return (data.news ?? []).slice(0, MAX_PER_CATEGORY);
-  } catch {
+  } catch (error) {
+    console.error(`[currents] events:${category} fetch failed:`, error);
     return [];
   }
 }

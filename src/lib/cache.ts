@@ -20,8 +20,9 @@ export async function getCached<T>(key: string): Promise<T | null> {
   if (!redis) return null;
   try {
     return await redis.get<T>(key);
-  } catch {
+  } catch (error) {
     // A cache outage must never take the app down — treat it as a miss.
+    console.error(`[cache] read failed for ${key}:`, error);
     return null;
   }
 }
@@ -34,7 +35,8 @@ export async function setCached(
   if (!redis) return;
   try {
     await redis.set(key, value, { ex: ttlSeconds });
-  } catch {
+  } catch (error) {
     // Cache writes are best-effort.
+    console.error(`[cache] write failed for ${key}:`, error);
   }
 }

@@ -1,13 +1,11 @@
-import { ALL_CATEGORIES } from "@/types";
-import type { CountryCode, Event, EventCategory } from "@/types";
+import { ALL_CATEGORIES, ALL_COUNTRY_CODES } from "@/types";
+import type { Event, EventCategory } from "@/types";
 import { isSanctionedPublisher } from "./blockedPublishers";
 import { recordGNewsCall } from "./gnewsUsage";
 
 const GNEWS_ENDPOINT = "https://gnews.io/api/v4/search";
 
 const MAX_TOTAL_EVENTS = 10;
-
-const ALL_COUNTRIES: CountryCode[] = ["NL", "US", "RU", "CN", "IN", "IR", "UA", "DE"];
 
 // One curated query per fixed app category. GNews has no concept of these
 // categories, so category assignment happens at query time rather than by
@@ -43,8 +41,8 @@ function slugify(value: string): string {
 function mapArticleToEvent(article: GNewsArticle, category: EventCategory): Event {
   // GNews doesn't report the source's country, so availability can't be
   // narrowed from the article the way GDELT's sourcecountry allowed —
-  // falls back to all 7, same as the mock data. Harmless since Sources
-  // and CountryFraming remain mock/curated regardless.
+  // falls back to every covered country, same as the mock data. Harmless
+  // since Sources and CountryFraming remain mock/curated regardless.
   return {
     id: `${category}-${slugify(article.source.name)}-${article.publishedAt.slice(0, 10)}`,
     title: article.title,
@@ -52,7 +50,7 @@ function mapArticleToEvent(article: GNewsArticle, category: EventCategory): Even
     date: article.publishedAt.slice(0, 10),
     summary: article.description || article.title,
     context: `Reported by ${article.source.name}. Full coverage available via the original source.`,
-    availableCountries: ALL_COUNTRIES,
+    availableCountries: [...ALL_COUNTRY_CODES],
     imageUrl: article.image || undefined,
   };
 }
@@ -78,10 +76,14 @@ async function fetchGNewsCategory(
     const response = await fetch(`${GNEWS_ENDPOINT}?${params.toString()}`, {
       signal: AbortSignal.timeout(5000),
     });
-    if (!response.ok) return [];
+    if (!response.ok) {
+      console.error(`[gnews] events:${category} responded ${response.status}`);
+      return [];
+    }
     const data = (await response.json()) as { articles?: GNewsArticle[] };
     return data.articles ?? [];
-  } catch {
+  } catch (error) {
+    console.error(`[gnews] events:${category} fetch failed:`, error);
     return [];
   }
 }

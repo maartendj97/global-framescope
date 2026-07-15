@@ -97,7 +97,10 @@ async function fetchRawArticles(
     await throttle();
     await recordGNewsCall(context);
     const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
-    if (!response.ok) return [];
+    if (!response.ok) {
+      console.error(`[gnews] ${context} responded ${response.status}`);
+      return [];
+    }
     const data = (await response.json()) as { articles?: RawGNewsArticle[] };
     // EU-sanctioned outlets (RT, Sputnik) are dropped before caching, so
     // they can't reach the Countries tab or the aggregated Sources tab.
@@ -107,7 +110,8 @@ async function fetchRawArticles(
     coverageCache.set(cacheKey, { articles, expiresAt: Date.now() + CACHE_TTL_MS });
     await setCached(cacheKey, articles, CACHE_TTL_SECONDS);
     return articles;
-  } catch {
+  } catch (error) {
+    console.error(`[gnews] ${context} fetch failed:`, error);
     return [];
   }
 }

@@ -38,8 +38,9 @@ export async function recordGNewsCall(context: string): Promise<number> {
       // so old day-counters clean themselves up.
       if (globalCount === 1) await redis.expire(usageKey(), 60 * 60 * 48);
       count = globalCount;
-    } catch {
+    } catch (error) {
       // Redis hiccup — the local tally above still counts this call.
+      console.warn("[gnews] usage counter increment failed:", error);
     }
   }
 
@@ -53,8 +54,9 @@ export async function getGNewsCallCountToday(): Promise<number> {
     try {
       const globalCount = await redis.get<number>(usageKey());
       if (globalCount !== null) return globalCount;
-    } catch {
+    } catch (error) {
       // Fall through to the local tally.
+      console.warn("[gnews] usage counter read failed:", error);
     }
   }
   return count;

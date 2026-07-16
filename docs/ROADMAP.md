@@ -36,7 +36,7 @@ Not started. Do not begin until Phase 1 is functionally complete and explicitly 
 - [x] API routes — `/api/country-sources` (per-country live coverage) and `/api/event-sources` (aggregated per-event coverage)
 - [ ] Authentication
 - [x] Real news-source ingestion — GNews primary (with daily budget guard), Currents backup, direct state-media RSS feeds (TASS, Xinhua, CGTN, China Daily, IRNA), EU-sanctions publisher filter, all cached in shared Upstash Redis (`src/lib/cache.ts`; events pool 3h, per-event records 7d, coverage 24h, feeds 20min)
-- [ ] AI-supported analysis — the big open piece: live events currently show real article lists but no framing analysis; per-country framing only exists as mock data for the 3 Phase 1 events
+- [~] AI-supported analysis — first slice live: per-country headline summaries on the Countries tab (`/api/country-summary`, claude-haiku-4-5, 24h Redis cache, single-flight lock, daily spend cap; requires `ANTHROPIC_API_KEY`). Full framing analysis (tone, emphasis, terminology) still only exists as mock data for the 3 Phase 1 events
 - [ ] Administration and content management
 
 In progress (ingestion + API routes landed ahead of the original phase order; testing landed too — Vitest, unit tests for the pure pipeline logic). Database, auth, AI analysis, and admin remain unstarted — do not begin those until explicitly requested.

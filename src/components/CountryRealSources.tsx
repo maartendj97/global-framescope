@@ -72,6 +72,17 @@ export function CountryRealSources({ country, event, onBack }: CountryRealSource
     fetcher,
     SWR_OPTIONS
   );
+
+  // Fetched in parallel with the sources above; the section renders
+  // only when a summary actually comes back, so a missing API key, the
+  // daily spend cap, or zero coverage all just mean "sources only".
+  const { data: summaryData } = useSWR<{ summary: string | null; pending?: boolean }>(
+    `/api/country-summary?eventId=${encodeURIComponent(event.id)}&country=${country.code}`,
+    fetcher,
+    SWR_OPTIONS
+  );
+  const summaryLoading = summaryData === undefined;
+  const summary = summaryData?.summary ?? null;
   const state: FetchState = error
     ? { status: "error" }
     : data
@@ -100,6 +111,33 @@ export function CountryRealSources({ country, event, onBack }: CountryRealSource
       />
 
       <div className="mt-4 space-y-5 rounded-2xl border border-border bg-surface p-4">
+        {(summaryLoading || summary) && (
+          <div>
+            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              What {country.name}&rsquo;s media is saying
+            </h4>
+            {summaryLoading ? (
+              <div
+                className="mt-2 animate-pulse space-y-2"
+                aria-label="Loading summary"
+                aria-busy="true"
+              >
+                <div className="h-4 w-full rounded bg-surface-secondary" />
+                <div className="h-4 w-[92%] rounded bg-surface-secondary" />
+                <div className="h-4 w-[60%] rounded bg-surface-secondary" />
+              </div>
+            ) : (
+              <>
+                <p className="mt-1 text-sm leading-relaxed text-foreground">{summary}</p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  AI-generated overview of the headlines below — read the sources for the full
+                  picture.
+                </p>
+              </>
+            )}
+          </div>
+        )}
+
         <div>
           <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Coverage

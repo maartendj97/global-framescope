@@ -197,18 +197,25 @@ async function generateEventFraming(
         { role: "user", content: buildEventFramingPrompt(event, countries, contentByCountry) },
       ],
     });
-    // A max_tokens stop means the JSON is truncated and the parse below
-    // will throw — log the reason first so the failure mode is visible in
-    // Vercel logs instead of a bare SyntaxError.
-    if (response.stop_reason !== "end_turn") {
-      console.error(
-        `[anthropic] framing for ${event.id} stopped early: ${response.stop_reason}`
-      );
-    }
     const text = response.content
       .filter((block) => block.type === "text")
       .map((block) => block.text)
       .join("");
+    // An empty or truncated text means the parse below will throw — put
+    // the response's own diagnostics (stop reason, block types) into the
+    // error message first, so the real failure mode is visible instead of
+    // a bare SyntaxError.
+    if (response.stop_reason !== "end_turn" || text.length === 0) {
+      const blockTypes = response.content.map((block) => block.type).join(",") || "none";
+      console.error(
+        `[anthropic] framing for ${event.id}: stop_reason=${response.stop_reason} blocks=${blockTypes} textLength=${text.length}`
+      );
+      if (text.length === 0) {
+        throw new Error(
+          `empty model output (stop_reason=${response.stop_reason}, blocks=${blockTypes})`
+        );
+      }
+    }
     const parsed = JSON.parse(text) as { framings: RawFraming[]; differences: RawDifference[] };
     return {
       result: {

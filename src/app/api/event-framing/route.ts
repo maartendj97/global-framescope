@@ -174,37 +174,54 @@ const EVENT_FRAMING_JSON_SCHEMA = {
 type RawFraming = Omit<EventCountryFraming, "eventId">;
 type RawDifference = Omit<EventKeyDifference, "eventId">;
 
+type GenerationOutcome = { result: EventFramingResult | null; errorDetail: string | null };
+
 async function generateEventFraming(
   event: Event,
   countries: Country[],
   contentByCountry: Map<CountryCode, ArticleWithTier[]>,
   apiKey: string
-): Promise<EventFramingResult | null> {
+): Promise<GenerationOutcome> {
   const client = new Anthropic({ apiKey });
   try {
     await recordFramingGeneration(`event-framing:${event.id}`);
     const response = await client.messages.create({
       model: "claude-sonnet-5",
-      max_tokens: 2000,
+      // Sonnet 5 runs adaptive thinking by default, and thinking tokens
+      // count against max_tokens — a 2000-token cap left no room for the
+      // 8-country structured JSON after thinking, truncating the output
+      // mid-JSON. 8000 gives both phases comfortable headroom.
+      max_tokens: 8000,
       output_config: { format: { type: "json_schema", schema: EVENT_FRAMING_JSON_SCHEMA } },
       messages: [
         { role: "user", content: buildEventFramingPrompt(event, countries, contentByCountry) },
       ],
     });
+    // A max_tokens stop means the JSON is truncated and the parse below
+    // will throw — log the reason first so the failure mode is visible in
+    // Vercel logs instead of a bare SyntaxError.
+    if (response.stop_reason !== "end_turn") {
+      console.error(
+        `[anthropic] framing for ${event.id} stopped early: ${response.stop_reason}`
+      );
+    }
     const text = response.content
       .filter((block) => block.type === "text")
       .map((block) => block.text)
       .join("");
     const parsed = JSON.parse(text) as { framings: RawFraming[]; differences: RawDifference[] };
     return {
-      framings: parsed.framings.map((framing) => ({ ...framing, eventId: event.id })),
-      differences: parsed.differences.map((difference) => ({ ...difference, eventId: event.id })),
+      result: {
+        framings: parsed.framings.map((framing) => ({ ...framing, eventId: event.id })),
+        differences: parsed.differences.map((difference) => ({ ...difference, eventId: event.id })),
+      },
+      errorDetail: null,
     };
   } catch (error) {
     // A model outage, malformed JSON, or bad key must never break the
     // Differences tab — the client renders the honest empty state.
     console.error(`[anthropic] framing generation failed for ${event.id}:`, error);
-    return null;
+    return { result: null, errorDetail: error instanceof Error ? error.message : String(error) };
   }
 }
 
@@ -292,9 +309,20 @@ export async function GET(request: Request) {
   }
 
   const contentByCountry = await buildEventFramingContent(coverageByCountry);
-  const result = await generateEventFraming(event, countries, contentByCountry, apiKey);
+  const { result, errorDetail } = await generateEventFraming(
+    event,
+    countries,
+    contentByCountry,
+    apiKey
+  );
   if (result) {
     await setCached(key, result, FRAMING_TTL_SECONDS);
+  }
+  // TEMPORARY diagnostic (remove after the production failure is
+  // understood): ?debug=1 surfaces the generation error message in the
+  // response, since Vercel logs aren't reachable from this side.
+  if (searchParams.get("debug") === "1" && errorDetail) {
+    return NextResponse.json({ ...EMPTY_RESULT, debugError: errorDetail });
   }
   return NextResponse.json((result ?? EMPTY_RESULT) satisfies EventFramingResponse);
 }

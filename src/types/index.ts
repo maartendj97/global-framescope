@@ -11,3 +11,9 @@ export type {
   CountryCoverageResult,
   EventSourceArticle,
 } from "./coverage";
+export type {
+  ContentTier,
+  EventCountryFraming,
+  EventKeyDifference,
+  EventFramingResult,
+} from "./eventFraming";

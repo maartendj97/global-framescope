@@ -9,6 +9,10 @@ export type CountrySourceArticle = {
   url: string;
   publisher: string;
   publishedAt: string;
+  // A short (usually 1-2 sentence) snippet from the source provider —
+  // GNews's `description` or an RSS item's `contentSnippet`. Not always
+  // present. Richer than the title alone, but still not full article text.
+  description?: string;
   // Set at ingestion for articles that came directly from a state-run
   // outlet's own feed (see stateFeeds.ts); aggregator articles omit it.
   sourceType?: "state-media";

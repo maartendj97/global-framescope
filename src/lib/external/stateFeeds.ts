@@ -89,6 +89,7 @@ export function mapFeedItem(item: StateFeedItem, outlet: string): CountrySourceA
     url: item.link,
     publisher: outlet,
     publishedAt: date.toISOString().slice(0, 10),
+    description: item.contentSnippet || undefined,
     sourceType: "state-media",
   };
 }

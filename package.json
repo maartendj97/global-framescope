@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.111.0",
+    "@extractus/article-extractor": "^8.1.0",
     "@radix-ui/react-radio-group": "^1.4.3",
     "@radix-ui/react-tabs": "^1.1.17",
     "@upstash/redis": "^1.38.0",
@@ -34,5 +35,10 @@
     "typescript": "^5",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^2.1.9"
+  },
+  "overrides": {
+    "sanitize-html": {
+      "htmlparser2": "^10.1.0"
+    }
   }
 }

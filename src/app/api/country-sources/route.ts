@@ -111,6 +111,7 @@ function toCountrySourceArticle(article: RawGNewsArticle): CountrySourceArticle 
     url: article.url,
     publisher: article.source.name,
     publishedAt: article.publishedAt.slice(0, 10),
+    description: article.description || undefined,
   };
 }
 

@@ -25,7 +25,9 @@ export function mergeCountryArticles(results: CountryResult[]): EventSourceArtic
 // makes 2 calls back-to-back, and without this shared counter that second
 // call wouldn't be throttled relative to the first. Mirrors the same
 // pattern applied per-category in fetchLiveEvents (src/lib/external/gnews.ts).
-function createThrottle() {
+// Exported so /api/event-framing (also an all-countries-at-once caller)
+// reuses the exact same spacing helper instead of duplicating it.
+export function createThrottle() {
   let calledBefore = false;
   return async () => {
     if (calledBefore) await new Promise((resolve) => setTimeout(resolve, 1100));

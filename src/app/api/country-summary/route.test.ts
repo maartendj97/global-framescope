@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSummaryPrompt } from "./route";
+import { buildSummaryArticles, buildSummaryPrompt } from "./route";
 import type { Country, CountrySourceArticle, Event } from "@/types";
 
 const event: Event = {
@@ -14,8 +14,14 @@ const event: Event = {
 
 const iran: Country = { code: "IR", name: "Iran", flagEmoji: "🇮🇷" };
 
-function article(title: string): CountrySourceArticle {
-  return { title, url: "https://example.com", publisher: "Press TV", publishedAt: "2026-07-16" };
+function article(title: string, description?: string): CountrySourceArticle {
+  return {
+    title,
+    url: "https://example.com",
+    publisher: "Press TV",
+    publishedAt: "2026-07-16",
+    description,
+  };
 }
 
 describe("buildSummaryPrompt", () => {
@@ -29,6 +35,23 @@ describe("buildSummaryPrompt", () => {
     expect(prompt).toContain(event.title);
     expect(prompt).toContain("Iran");
     expect(prompt).toContain('"Tanker attack condemned" (Press TV, 2026-07-16)');
+  });
+
+  it("appends the article description when present", () => {
+    const prompt = buildSummaryPrompt(
+      event,
+      iran,
+      [article("Tanker attack condemned", "Iranian officials called the strike an act of aggression.")],
+      "from-country"
+    );
+    expect(prompt).toContain(
+      '"Tanker attack condemned" (Press TV, 2026-07-16): Iranian officials called the strike an act of aggression.'
+    );
+  });
+
+  it("omits the colon suffix when an article has no description", () => {
+    const prompt = buildSummaryPrompt(event, iran, [article("Tanker attack condemned")], "from-country");
+    expect(prompt).toContain('"Tanker attack condemned" (Press TV, 2026-07-16)\n');
   });
 
   it("caps the prompt at 5 headlines", () => {
@@ -58,5 +81,48 @@ describe("buildSummaryPrompt", () => {
     expect(prompt).toContain("international headlines that mention Iran");
     expect(prompt).toContain("Do not present this as Iran's own media framing");
     expect(prompt).not.toContain("how Iran's media is framing this event");
+  });
+});
+
+function articleWithUrl(url: string, description?: string): CountrySourceArticle {
+  return { title: "A headline", url, publisher: "Press TV", publishedAt: "2026-07-16", description };
+}
+
+describe("buildSummaryArticles", () => {
+  it("overrides an article's description with its extracted full text", () => {
+    const articles = [articleWithUrl("https://a.example", "short snippet")];
+    const extracted = new Map([["https://a.example", "The full article body, much longer than the snippet."]]);
+
+    const result = buildSummaryArticles(articles, extracted);
+
+    expect(result[0].description).toBe("The full article body, much longer than the snippet.");
+  });
+
+  it("truncates extracted text to the max body length", () => {
+    const longText = "x".repeat(2000);
+    const articles = [articleWithUrl("https://a.example")];
+    const extracted = new Map([["https://a.example", longText]]);
+
+    const result = buildSummaryArticles(articles, extracted);
+
+    expect(result[0].description?.length).toBe(1500);
+  });
+
+  it("keeps the original description when no extracted text is available for that URL", () => {
+    const articles = [articleWithUrl("https://a.example", "short snippet")];
+    const extracted = new Map<string, string | null>([["https://a.example", null]]);
+
+    const result = buildSummaryArticles(articles, extracted);
+
+    expect(result[0].description).toBe("short snippet");
+  });
+
+  it("leaves an article with neither extracted text nor a description untouched", () => {
+    const articles = [articleWithUrl("https://a.example")];
+    const extracted = new Map<string, string | null>();
+
+    const result = buildSummaryArticles(articles, extracted);
+
+    expect(result[0].description).toBeUndefined();
   });
 });

@@ -11,6 +11,7 @@ import { filterEventCountries, getEventImageSrc, isExternalEventImage } from "@/
 import { getFadeSlideVariants, getTransition, useReducedMotion } from "@/lib/motionConfig";
 import { CountriesTab } from "./CountriesTab";
 import { DifferencesTable } from "./DifferencesTable";
+import { LiveDifferencesTab } from "./LiveDifferencesTab";
 import { ShareButton } from "./ShareButton";
 
 type Tab = "overview" | "countries" | "differences";
@@ -155,22 +156,32 @@ export function EventDetailView({
             animate="visible"
             transition={transition}
           >
-            <div className="space-y-3">
-              {keyDifferences.map((difference) => (
-                <div
-                  key={difference.title}
-                  className="rounded-2xl border border-border bg-surface p-3"
-                >
-                  <h3 className="text-sm font-semibold text-foreground">
-                    {difference.title}
-                  </h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {difference.description}
-                  </p>
+            {/* Mock events have hand-written framings for every country
+                (see CountriesTab's identical check); real (live-fetched)
+                events have none, and get an AI-generated comparison
+                instead, fetched on demand. */}
+            {framings.length > 0 ? (
+              <>
+                <div className="space-y-3">
+                  {keyDifferences.map((difference) => (
+                    <div
+                      key={difference.title}
+                      className="rounded-2xl border border-border bg-surface p-3"
+                    >
+                      <h3 className="text-sm font-semibold text-foreground">
+                        {difference.title}
+                      </h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {difference.description}
+                      </p>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <DifferencesTable countries={eventCountries} framings={framings} />
+                <DifferencesTable countries={eventCountries} framings={framings} />
+              </>
+            ) : (
+              <LiveDifferencesTab event={event} countries={eventCountries} />
+            )}
           </motion.div>
         </Tabs.Content>
       </Tabs.Root>

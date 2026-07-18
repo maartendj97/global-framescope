@@ -185,7 +185,12 @@ async function generateEventFraming(
     await recordFramingGeneration(`event-framing:${event.id}`);
     const response = await client.messages.create({
       model: "claude-sonnet-5",
-      max_tokens: 2000,
+      // Sonnet 5 runs adaptive thinking by default, and those thinking
+      // tokens count against max_tokens. 2000 left no headroom for the
+      // 8-country structured JSON after thinking, truncating the output
+      // mid-JSON and failing the parse below — confirmed locally against
+      // this exact prompt shape. 8000 gives both phases comfortable room.
+      max_tokens: 8000,
       output_config: { format: { type: "json_schema", schema: EVENT_FRAMING_JSON_SCHEMA } },
       messages: [
         { role: "user", content: buildEventFramingPrompt(event, countries, contentByCountry) },

@@ -5,13 +5,8 @@ import { getCached, setCached } from "@/lib/cache";
 import { isSanctionedPublisher } from "@/lib/external/blockedPublishers";
 import { isOverDailyBudget, recordGNewsCall } from "@/lib/external/gnewsUsage";
 import { fetchStateMediaCoverage, STATE_MEDIA_COUNTRIES } from "@/lib/external/stateFeeds";
-import type {
-  CountryCode,
-  CountryCoverageResult,
-  CountrySourceArticle,
-  CoverageTier,
-  Event,
-} from "@/types";
+import { fetchNewsDataCountryCoverage } from "@/lib/external/newsdata";
+import type { CountryCode, CountryCoverageResult, CountrySourceArticle, Event } from "@/types";
 
 const GNEWS_ENDPOINT = "https://gnews.io/api/v4/search";
 
@@ -160,7 +155,13 @@ export function matchesFallbackTier(
 //      no GNews budget, and the honest "state media" signal the product
 //      is built around.
 //   2. GNews strict country search (needs an API key).
-//   3. GNews broader "mentions the country" fallback, when enabled.
+//   3. NewsData.io strict country search, tried when GNews found nothing
+//      (or no GNews key is set) — a second independent aggregator, added
+//      because GNews's India coverage was thin (see
+//      src/lib/external/newsdata.ts), but usable as a general backup for
+//      any country. Has its own key/budget guard, so it's a no-op when
+//      unconfigured.
+//   4. GNews broader "mentions the country" fallback, when enabled.
 // `throttle` lets callers space out GNews calls when making several in one
 // request (GNews's free tier rejects calls fired within ~1.1s of each
 // other, even sequential ones) — the default no-op preserves this route's
@@ -184,8 +185,6 @@ export async function fetchCountryCoverage(
     }
   }
 
-  if (!apiKey) return { articles: [], tier: "from-country" };
-
   // Reuse the same category phrase query that reliably surfaced the main
   // event in the first place, rather than the exact article headline —
   // the full headline combined with a country filter is narrow enough
@@ -195,31 +194,42 @@ export async function fetchCountryCoverage(
   // throttle is passed down into fetchRawArticles rather than awaited
   // here, so it only delays actual cache-miss network calls — a cached
   // country's lookup returns immediately, with no artificial wait.
-  let rawArticles = await fetchRawArticles(
-    buildStrictParams(query, country),
-    apiKey,
-    `${contextPrefix}:${country}:strict`,
-    throttle
-  );
-  let tier: CoverageTier = "from-country";
-
-  if (rawArticles.length === 0 && includeFallbackTier) {
-    const countryRecord = await getCountryByCode(country);
-    if (countryRecord) {
-      const fallbackArticles = await fetchRawArticles(
-        buildFallbackParams(query, countryRecord.name),
-        apiKey,
-        `${contextPrefix}:${country}:fallback`,
-        throttle
-      );
-      rawArticles = fallbackArticles.filter((article) =>
-        matchesFallbackTier(article, countryRecord.name)
-      );
-      tier = "mentioning-country";
+  if (apiKey) {
+    const rawArticles = await fetchRawArticles(
+      buildStrictParams(query, country),
+      apiKey,
+      `${contextPrefix}:${country}:strict`,
+      throttle
+    );
+    if (rawArticles.length > 0) {
+      return { articles: rawArticles.map(toCountrySourceArticle), tier: "from-country" };
     }
   }
 
-  return { articles: rawArticles.map(toCountrySourceArticle), tier };
+  const newsDataArticles = await fetchNewsDataCountryCoverage(
+    country,
+    query,
+    `${contextPrefix}:${country}:newsdata`
+  );
+  if (newsDataArticles.length > 0) {
+    return { articles: newsDataArticles, tier: "from-country" };
+  }
+
+  if (!apiKey || !includeFallbackTier) return { articles: [], tier: "from-country" };
+
+  const countryRecord = await getCountryByCode(country);
+  if (!countryRecord) return { articles: [], tier: "from-country" };
+
+  const fallbackArticles = await fetchRawArticles(
+    buildFallbackParams(query, countryRecord.name),
+    apiKey,
+    `${contextPrefix}:${country}:fallback`,
+    throttle
+  );
+  const matchedArticles = fallbackArticles.filter((article) =>
+    matchesFallbackTier(article, countryRecord.name)
+  );
+  return { articles: matchedArticles.map(toCountrySourceArticle), tier: "mentioning-country" };
 }
 
 export async function GET(request: Request) {

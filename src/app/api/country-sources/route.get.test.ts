@@ -29,6 +29,9 @@ vi.mock("@/lib/external/stateFeeds", () => ({
   fetchStateMediaCoverage: vi.fn().mockResolvedValue([]),
   STATE_MEDIA_COUNTRIES: new Set(),
 }));
+vi.mock("@/lib/external/newsdata", () => ({
+  fetchNewsDataCountryCoverage: vi.fn().mockResolvedValue([]),
+}));
 
 const { GET } = await import("./route");
 

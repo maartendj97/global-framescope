@@ -40,3 +40,24 @@ Not started. Do not begin until Phase 1 is functionally complete and explicitly 
 - [ ] Administration and content management
 
 In progress (ingestion + API routes landed ahead of the original phase order; testing landed too — Vitest, unit tests for the pure pipeline logic). Database, auth, and admin remain unstarted — do not begin those until explicitly requested.
+
+## Backlog — improvement candidates (2026-07-19)
+
+Prioritized ideas along four axes (value, cost, safety, future-proofing). Not scheduled; pick per session. Items are ordered by suggested priority within each group.
+
+### Product value
+
+- [ ] **Duplicate-event clustering** — each fetched article currently becomes its own event (id = category+publisher+date), so the same story from 4 publishers shows as 4 separate cards (observed live 2026-07-19 with the US-Iran ceasefire story). Merge same-story articles into one event with multiple sources — directly serves the "one event, multiple perspectives" tagline. Highest-value candidate; medium effort (needs a similarity/clustering step in the pool build).
+- [ ] **Dutch-language coverage for NL** — searches are English-only (`lang=en`); NL returned 2 articles where other countries got 5. Add a Dutch-language search tier for NL (GNews `lang=nl`); requires the AI prompts to handle non-English input honestly.
+- [ ] **Events-pool cron refresh** — the pool refreshes lazily on the first request after the 3h cache expires, so that visitor waits. A Vercel cron hitting a refresh endpoint keeps the pool warm.
+
+### Cost
+
+- Already controlled: daily caps on GNews (85), NewsData.io (150), AI summaries (300/day, Haiku) and framing (50/day, Sonnet); 24h Redis caches bound spend to distinct event+country pairs, not visitors. No action needed now; real-spend visibility belongs to the dashboard item below.
+
+### Safety & future-proofing
+
+- [ ] **CI before deploy** — tests/lint/typecheck currently run only on the dev machine; Vercel deploys whatever lands on `main` without running the suite. Add a GitHub Actions workflow (`npm test` + lint + `tsc --noEmit` on push/PR). Small effort, prevents shipping a broken commit unnoticed.
+- [ ] **Observability dashboard** — visitors (use Vercel Analytics, built-in), API budget usage (GNews/NewsData/Anthropic counters already live in Redis, just not surfaced), per-country content-quality tiers (full-text vs description vs headline-only — guides sourcing work), and per-source error rates (already logged with `[gnews]`/`[currents]`/`[statefeeds]` prefixes; Vercel Hobby logs expire quickly, so nobody sees them today).
+- [ ] **Credential storage before go-live** — adopt a password manager (1Password/Bitwarden), one entry per service (GitHub, Vercel, Anthropic, GNews, NewsData.io, Currents, Upstash); several keys currently exist only as one-time pastes. Naming convention for new tokens: `<service>-<purpose>-<device>-<yyyy-mm>`; short expiries (7–30d debug, 90d production with rotation reminder).
+- [ ] **Pre-warm AI country summaries on pool refresh** — explicitly deferred (2026-07-17): latency polish only, slightly increases cost; revisit only if first-visitor latency becomes a real complaint.

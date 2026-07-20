@@ -31,4 +31,9 @@ export interface Event {
   // included a thumbnail; absent for mock events, which always use the
   // category illustration instead.
   imageUrl?: string;
+  // Present for real (GNews-fetched) events: every distinct publisher
+  // whose article was clustered into this event (see clusterArticles in
+  // src/lib/external/gnews.ts). Absent for mock events, which use the
+  // static per-event Source records instead.
+  sources?: { publisher: string; url: string }[];
 }

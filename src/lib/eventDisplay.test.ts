@@ -1,7 +1,27 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ALL_CATEGORIES } from "@/types";
-import { CATEGORY_IMAGES, CATEGORY_LABELS, formatEventDate, formatRelativeOrDate } from "./eventDisplay";
+import type { Event } from "@/types";
+import {
+  CATEGORY_IMAGES,
+  CATEGORY_LABELS,
+  formatEventDate,
+  formatRelativeOrDate,
+  getEventSourceCount,
+} from "./eventDisplay";
 import { CATEGORY_QUERIES } from "./external/gnews";
+
+function baseEvent(overrides: Partial<Event> = {}): Event {
+  return {
+    id: "conflict-reuters-2026-07-20",
+    title: "Ceasefire agreed",
+    category: "conflict",
+    date: "2026-07-20",
+    summary: "Summary",
+    context: "Context",
+    availableCountries: [],
+    ...overrides,
+  };
+}
 
 describe("formatEventDate", () => {
   it("formats an ISO date as a full day/month/year string", () => {
@@ -58,5 +78,27 @@ describe("category mapping completeness", () => {
     for (const category of ALL_CATEGORIES) {
       expect(CATEGORY_QUERIES[category], `missing CATEGORY_QUERIES entry for "${category}"`).toBeTruthy();
     }
+  });
+});
+
+describe("getEventSourceCount", () => {
+  it("uses the event's own clustered sources when present", () => {
+    const event = baseEvent({
+      sources: [
+        { publisher: "Reuters", url: "https://reuters.example/a" },
+        { publisher: "AP", url: "https://ap.example/b" },
+      ],
+    });
+    expect(getEventSourceCount(event, new Map([[event.id, 99]]))).toBe(2);
+  });
+
+  it("falls back to the mock source-count map when the event has no sources field", () => {
+    const event = baseEvent();
+    expect(getEventSourceCount(event, new Map([[event.id, 3]]))).toBe(3);
+  });
+
+  it("returns 0 when neither the event nor the map has a count", () => {
+    const event = baseEvent();
+    expect(getEventSourceCount(event, new Map())).toBe(0);
   });
 });

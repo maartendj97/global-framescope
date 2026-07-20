@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getCountries, getEvents, getSourceCountsByEventIds } from "@/lib/data";
 import { EventCard } from "@/components/EventCard";
 import { StaggerItem } from "@/components/StaggerItem";
+import { getEventSourceCount } from "@/lib/eventDisplay";
 
 export default async function HomePage() {
   const [events, countries] = await Promise.all([getEvents(), getCountries()]);
@@ -32,7 +33,7 @@ export default async function HomePage() {
           <EventCard
             event={featuredEvent}
             countries={countries}
-            sourceCount={sourceCountByEventId.get(featuredEvent.id) ?? 0}
+            sourceCount={getEventSourceCount(featuredEvent, sourceCountByEventId)}
             variant="featured"
           />
         </section>
@@ -54,7 +55,7 @@ export default async function HomePage() {
                 <EventCard
                   event={event}
                   countries={countries}
-                  sourceCount={sourceCountByEventId.get(event.id) ?? 0}
+                  sourceCount={getEventSourceCount(event, sourceCountByEventId)}
                   variant="secondary"
                 />
               </StaggerItem>

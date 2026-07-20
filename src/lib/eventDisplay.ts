@@ -38,6 +38,16 @@ export function filterEventCountries(countries: Country[], event: Event): Countr
   return countries.filter((country) => event.availableCountries.includes(country.code));
 }
 
+// Real (GNews-clustered) events carry their own source list; mock events
+// don't, so they fall back to the static per-event Source records looked
+// up by id via getSourceCountsByEventIds.
+export function getEventSourceCount(
+  event: Event,
+  sourceCountByEventId: Map<string, number>
+): number {
+  return event.sources?.length ?? sourceCountByEventId.get(event.id) ?? 0;
+}
+
 export function formatEventDate(isoDate: string): string {
   return new Intl.DateTimeFormat("en-GB", {
     day: "numeric",

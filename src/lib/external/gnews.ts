@@ -38,20 +38,112 @@ function slugify(value: string): string {
     .replace(/(^-|-$)/g, "");
 }
 
-function mapArticleToEvent(article: GNewsArticle, category: EventCategory): Event {
+// Words too generic to signal that two headlines are about the same
+// story — kept short since GNews titles are terse compared to state-feed
+// article bodies.
+const CLUSTER_STOPWORDS = new Set([
+  "about", "after", "again", "against", "amid", "among", "announces",
+  "before", "between", "could", "does", "from", "have", "into", "over",
+  "report", "reports", "says", "than", "that", "their", "there", "these",
+  "they", "this", "under", "updates", "were", "what", "when", "where",
+  "which", "while", "will", "with", "would", "your",
+]);
+
+// Same >=4-char / stopword-filtered approach as stateFeeds.ts's keyword
+// extraction, applied here to compare two headlines against each other
+// rather than a headline against a fixed event title.
+function extractClusterKeywords(title: string): Set<string> {
+  return new Set(
+    title
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter((word) => word.length >= 4 && !CLUSTER_STOPWORDS.has(word))
+  );
+}
+
+// Overlap coefficient (shared / smaller set's size) rather than Jaccard —
+// a short, punchy headline and a longer, more descriptive one about the
+// same story should still cluster even though the longer one has more
+// total keywords diluting a Jaccard ratio.
+function keywordOverlapRatio(a: Set<string>, b: Set<string>): number {
+  const smaller = a.size <= b.size ? a : b;
+  const larger = a.size <= b.size ? b : a;
+  if (smaller.size === 0) return 0;
+  let shared = 0;
+  for (const word of smaller) if (larger.has(word)) shared++;
+  return shared / smaller.size;
+}
+
+const CLUSTER_SIMILARITY_THRESHOLD = 0.5;
+const CLUSTER_MIN_SHARED_KEYWORDS = 2;
+
+// Groups articles that are almost certainly the same underlying story
+// (e.g. 4 publishers all covering the same ceasefire announcement) so
+// they become one Event with multiple sources instead of 4 near-duplicate
+// cards — GNews has no story-grouping of its own, and each article
+// otherwise becomes an independent event keyed by publisher+date. Runs
+// per-category, since categories are already topically distinct enough
+// that cross-category false merges aren't a real risk, and a single
+// category's article count is small (max 4) so this stays O(n^2)-cheap.
+export function clusterArticles(articles: GNewsArticle[]): GNewsArticle[][] {
+  const clusters: { keywords: Set<string>; items: GNewsArticle[] }[] = [];
+
+  for (const article of articles) {
+    const keywords = extractClusterKeywords(article.title);
+    const match = clusters.find((cluster) => {
+      const shared = keywordOverlapRatio(keywords, cluster.keywords);
+      const sharedCount = [...keywords].filter((word) => cluster.keywords.has(word)).length;
+      return shared >= CLUSTER_SIMILARITY_THRESHOLD && sharedCount >= CLUSTER_MIN_SHARED_KEYWORDS;
+    });
+
+    if (match) {
+      match.items.push(article);
+    } else {
+      clusters.push({ keywords, items: [article] });
+    }
+  }
+
+  return clusters.map((cluster) => cluster.items);
+}
+
+function mapClusterToEvent(cluster: GNewsArticle[], category: EventCategory): Event {
+  // The article with the longest description leads the merged event —
+  // richer source content makes a better summary/context than picking
+  // whichever article happened to be fetched first.
+  const primary = cluster.reduce((best, article) =>
+    article.description.length > best.description.length ? article : best
+  );
+
+  // One entry per distinct publisher (case-insensitive) — GNews can
+  // return the same outlet twice for a story (e.g. a live-updated wire
+  // piece re-indexed), which shouldn't count as two sources.
+  const seenPublishers = new Set<string>();
+  const sources = cluster
+    .filter((article) => {
+      const key = article.source.name.toLowerCase();
+      if (seenPublishers.has(key)) return false;
+      seenPublishers.add(key);
+      return true;
+    })
+    .map((article) => ({ publisher: article.source.name, url: article.url }));
+
   // GNews doesn't report the source's country, so availability can't be
   // narrowed from the article the way GDELT's sourcecountry allowed —
   // falls back to every covered country, same as the mock data. Harmless
-  // since Sources and CountryFraming remain mock/curated regardless.
+  // since CountryFraming remains mock/curated regardless.
   return {
-    id: `${category}-${slugify(article.source.name)}-${article.publishedAt.slice(0, 10)}`,
-    title: article.title,
+    id: `${category}-${slugify(primary.source.name)}-${primary.publishedAt.slice(0, 10)}`,
+    title: primary.title,
     category,
-    date: article.publishedAt.slice(0, 10),
-    summary: article.description || article.title,
-    context: `Reported by ${article.source.name}. Full coverage available via the original source.`,
+    date: primary.publishedAt.slice(0, 10),
+    summary: primary.description || primary.title,
+    context:
+      sources.length > 1
+        ? `Reported by ${sources.length} outlets, including ${primary.source.name}. Full coverage available via the original sources.`
+        : `Reported by ${primary.source.name}. Full coverage available via the original source.`,
     availableCountries: [...ALL_COUNTRY_CODES],
-    imageUrl: article.image || undefined,
+    imageUrl: primary.image || undefined,
+    sources,
   };
 }
 
@@ -105,11 +197,14 @@ export async function fetchLiveEvents(): Promise<Event[]> {
   // keeping total daily GNews calls for the events pool roughly flat.
   for (const [index, category] of ALL_CATEGORIES.entries()) {
     if (index > 0) await new Promise((resolve) => setTimeout(resolve, 1100));
-    const articles = await fetchGNewsCategory(category, apiKey);
-    for (const article of articles) {
-      // EU-sanctioned outlets (RT, Sputnik) never enter the events pool.
-      if (isSanctionedPublisher(article.source.name)) continue;
-      const event = mapArticleToEvent(article, category);
+    const fetched = await fetchGNewsCategory(category, apiKey);
+    // EU-sanctioned outlets (RT, Sputnik) never enter the events pool.
+    const articles = fetched.filter((article) => !isSanctionedPublisher(article.source.name));
+    // Cluster same-story articles (e.g. 4 publishers covering the same
+    // ceasefire) into one event with multiple sources, rather than one
+    // near-duplicate card per publisher.
+    for (const cluster of clusterArticles(articles)) {
+      const event = mapClusterToEvent(cluster, category);
       if (seenIds.has(event.id)) continue;
       seenIds.add(event.id);
       events.push(event);

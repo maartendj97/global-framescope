@@ -5,7 +5,7 @@ import { ALL_CATEGORIES } from "@/types";
 import type { Country, Event, EventCategory } from "@/types";
 import { EventCard } from "./EventCard";
 import { StaggerItem } from "./StaggerItem";
-import { CATEGORY_LABELS } from "@/lib/eventDisplay";
+import { CATEGORY_LABELS, getEventSourceCount } from "@/lib/eventDisplay";
 import { useBookmarkedIds } from "@/lib/bookmarks";
 import { BookmarkIcon, SearchIcon } from "./icons";
 
@@ -83,7 +83,7 @@ export function EventsList({ events, countries, sourceCountByEventId }: EventsLi
             <EventCard
               event={event}
               countries={countries}
-              sourceCount={sourceCountByEventId.get(event.id) ?? 0}
+              sourceCount={getEventSourceCount(event, sourceCountByEventId)}
               variant="list"
             />
           </StaggerItem>

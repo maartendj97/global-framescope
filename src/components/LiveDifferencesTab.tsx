@@ -1,7 +1,7 @@
 "use client";
 
 import useSWR from "swr";
-import type { Country, Event, EventCountryFraming, EventKeyDifference } from "@/types";
+import type { Country, CountryCode, Event, EventCountryFraming, EventKeyDifference } from "@/types";
 import { Flag } from "./Flag";
 import { ToneBadge } from "./ToneBadge";
 import { fetcher, SWR_OPTIONS } from "@/lib/swrFetcher";
@@ -14,6 +14,7 @@ type LiveDifferencesTabProps = {
 type EventFramingResponse = {
   framings: EventCountryFraming[];
   differences: EventKeyDifference[];
+  notCoveredBy: CountryCode[];
   pending?: boolean;
 };
 
@@ -33,6 +34,9 @@ export function LiveDifferencesTab({ event, countries }: LiveDifferencesTabProps
   const pending = data?.pending === true;
   const framingByCode = new Map((data?.framings ?? []).map((f) => [f.countryCode, f]));
   const hasContent = !!data && !pending && (data.framings.length > 0 || data.differences.length > 0);
+  const notCoveredByCountries = (data?.notCoveredBy ?? [])
+    .map((code) => countries.find((country) => country.code === code))
+    .filter((country): country is Country => country !== undefined);
 
   return (
     <div className="space-y-5">
@@ -83,6 +87,27 @@ export function LiveDifferencesTab({ event, countries }: LiveDifferencesTabProps
               tab for real coverage from each country instead.
             </p>
           </div>
+        </div>
+      )}
+
+      {!loading && !pending && !error && notCoveredByCountries.length > 0 && (
+        <div className="rounded-2xl border border-border bg-surface p-3">
+          <h3 className="text-sm font-semibold text-foreground">Not covered by</h3>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {notCoveredByCountries.map((country) => (
+              <span
+                key={country.code}
+                title={country.name}
+                className="inline-flex items-center gap-1.5 rounded-full border border-border px-2 py-1 text-xs text-muted-foreground"
+              >
+                <Flag code={country.code} className="h-3 w-4" aria-hidden="true" />
+                {country.name}
+              </span>
+            ))}
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            No coverage of this story was found in these countries&rsquo; press.
+          </p>
         </div>
       )}
 

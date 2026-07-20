@@ -180,7 +180,7 @@ describe("GET /api/event-framing", () => {
     const response = await GET(new Request("http://localhost/api/event-framing"));
 
     expect(response.status).toBe(400);
-    expect(await response.json()).toEqual({ framings: [], differences: [] });
+    expect(await response.json()).toEqual({ framings: [], differences: [], notCoveredBy: [] });
   });
 
   it("returns 404 when the event does not exist", async () => {
@@ -189,7 +189,7 @@ describe("GET /api/event-framing", () => {
     const response = await GET(new Request("http://localhost/api/event-framing?eventId=missing"));
 
     expect(response.status).toBe(404);
-    expect(await response.json()).toEqual({ framings: [], differences: [] });
+    expect(await response.json()).toEqual({ framings: [], differences: [], notCoveredBy: [] });
   });
 
   it("returns the cached result without calling the cap check or Anthropic", async () => {
@@ -216,7 +216,7 @@ describe("GET /api/event-framing", () => {
 
     const response = await GET(new Request("http://localhost/api/event-framing?eventId=evt-1"));
 
-    expect(await response.json()).toEqual({ framings: [], differences: [] });
+    expect(await response.json()).toEqual({ framings: [], differences: [], notCoveredBy: [] });
     expect(anthropicCreate).not.toHaveBeenCalled();
     vi.unstubAllEnvs();
   });
@@ -231,12 +231,12 @@ describe("GET /api/event-framing", () => {
 
     const response = await GET(new Request("http://localhost/api/event-framing?eventId=evt-1"));
 
-    expect(await response.json()).toEqual({ framings: [], differences: [] });
+    expect(await response.json()).toEqual({ framings: [], differences: [], notCoveredBy: [] });
     expect(anthropicCreate).not.toHaveBeenCalled();
     vi.unstubAllEnvs();
   });
 
-  it("returns an empty result without calling Anthropic when no country has any coverage", async () => {
+  it("returns an empty result without calling Anthropic when no country has any coverage, listing every country as not covered", async () => {
     vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
     const anthropicCreate = vi.fn();
     const { GET } = await mockRouteDeps({
@@ -246,7 +246,11 @@ describe("GET /api/event-framing", () => {
 
     const response = await GET(new Request("http://localhost/api/event-framing?eventId=evt-1"));
 
-    expect(await response.json()).toEqual({ framings: [], differences: [] });
+    expect(await response.json()).toEqual({
+      framings: [],
+      differences: [],
+      notCoveredBy: ["IR", "US", "NL"],
+    });
     expect(anthropicCreate).not.toHaveBeenCalled();
     vi.unstubAllEnvs();
   });
@@ -314,6 +318,46 @@ describe("GET /api/event-framing", () => {
     vi.unstubAllEnvs();
   });
 
+  it("includes notCoveredBy for countries with zero articles alongside a successful generation", async () => {
+    vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
+    const anthropicCreate = vi.fn().mockResolvedValue({
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            framings: [
+              {
+                countryCode: "IR",
+                mainFrame: "Frame",
+                toneCategory: "critical",
+                keyEmphasis: ["a"],
+                mainNarrative: "Narrative",
+                contentTier: "headline-only",
+              },
+            ],
+            differences: [],
+          }),
+        },
+      ],
+    });
+    const { GET } = await mockRouteDeps({
+      // Only Iran has coverage; US and NL come back empty.
+      fetchCountryCoverage: vi.fn().mockImplementation((_event, countryCode) =>
+        Promise.resolve({
+          articles: countryCode === "IR" ? [article("A")] : [],
+          tier: "from-country",
+        })
+      ),
+      anthropicCreate,
+    });
+
+    const response = await GET(new Request("http://localhost/api/event-framing?eventId=evt-1"));
+    const body = await response.json();
+
+    expect(body.notCoveredBy).toEqual(["US", "NL"]);
+    vi.unstubAllEnvs();
+  });
+
   it("degrades to an empty result (never throws) when the Anthropic call fails", async () => {
     vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
     const { GET } = await mockRouteDeps({
@@ -323,7 +367,7 @@ describe("GET /api/event-framing", () => {
 
     const response = await GET(new Request("http://localhost/api/event-framing?eventId=evt-1"));
 
-    expect(await response.json()).toEqual({ framings: [], differences: [] });
+    expect(await response.json()).toEqual({ framings: [], differences: [], notCoveredBy: [] });
     vi.unstubAllEnvs();
   });
 });

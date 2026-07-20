@@ -34,4 +34,11 @@ export type EventKeyDifference = {
 export type EventFramingResult = {
   framings: EventCountryFraming[];
   differences: EventKeyDifference[];
+  // Countries with zero fetched articles for this event — computed
+  // directly from coverage data, not from the AI's output, so it's exact
+  // rather than dependent on the model correctly noticing and stating an
+  // absence in prose. Distinct from a country simply being unavailable
+  // for the event (see Event.availableCountries): this means coverage
+  // was searched for and came back empty.
+  notCoveredBy: CountryCode[];
 };

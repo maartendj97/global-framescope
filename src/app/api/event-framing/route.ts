@@ -179,7 +179,7 @@ async function generateEventFraming(
   countries: Country[],
   contentByCountry: Map<CountryCode, ArticleWithTier[]>,
   apiKey: string
-): Promise<EventFramingResult | null> {
+): Promise<Omit<EventFramingResult, "notCoveredBy"> | null> {
   const client = new Anthropic({ apiKey });
   try {
     await recordFramingGeneration(`event-framing:${event.id}`);
@@ -229,7 +229,7 @@ async function waitForCachedFraming(
   return null;
 }
 
-const EMPTY_RESULT: EventFramingResult = { framings: [], differences: [] };
+const EMPTY_RESULT: EventFramingResult = { framings: [], differences: [], notCoveredBy: [] };
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -279,9 +279,16 @@ export async function GET(request: Request) {
     coverageByCountry.push({ country, articles });
   }
 
+  // Computed directly from coverage data rather than left to the AI to
+  // notice and mention — exact, and available even when there isn't
+  // enough coverage anywhere to generate framing at all.
+  const notCoveredBy = coverageByCountry
+    .filter(({ articles }) => articles.length === 0)
+    .map(({ country }) => country.code);
+
   const totalArticles = coverageByCountry.reduce((sum, c) => sum + c.articles.length, 0);
   if (totalArticles === 0) {
-    return NextResponse.json(EMPTY_RESULT satisfies EventFramingResponse);
+    return NextResponse.json({ ...EMPTY_RESULT, notCoveredBy } satisfies EventFramingResponse);
   }
 
   // Single-flight across all instances, same pattern as country-summary:
@@ -298,8 +305,11 @@ export async function GET(request: Request) {
 
   const contentByCountry = await buildEventFramingContent(coverageByCountry);
   const result = await generateEventFraming(event, countries, contentByCountry, apiKey);
+  const finalResult: EventFramingResult = result
+    ? { ...result, notCoveredBy }
+    : { ...EMPTY_RESULT, notCoveredBy };
   if (result) {
-    await setCached(key, result, FRAMING_TTL_SECONDS);
+    await setCached(key, finalResult, FRAMING_TTL_SECONDS);
   }
-  return NextResponse.json((result ?? EMPTY_RESULT) satisfies EventFramingResponse);
+  return NextResponse.json(finalResult satisfies EventFramingResponse);
 }

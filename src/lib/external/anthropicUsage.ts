@@ -76,18 +76,21 @@ export async function recordSummaryGeneration(context: string): Promise<number> 
   return count;
 }
 
-export async function isOverDailySummaryCap(): Promise<boolean> {
+export async function getSummaryCallCountToday(): Promise<number> {
   rolloverIfNewDay();
-  let current = count;
   if (redis) {
     try {
       const globalCount = await redis.get<number>(usageKey());
-      if (globalCount !== null) current = globalCount;
+      if (globalCount !== null) return globalCount;
     } catch (error) {
       console.warn("[anthropic] usage counter read failed:", error);
     }
   }
-  return current >= dailySummaryCap();
+  return count;
+}
+
+export async function isOverDailySummaryCap(): Promise<boolean> {
+  return (await getSummaryCallCountToday()) >= dailySummaryCap();
 }
 
 export async function recordFramingGeneration(context: string): Promise<number> {
@@ -108,16 +111,19 @@ export async function recordFramingGeneration(context: string): Promise<number> 
   return framingCount;
 }
 
-export async function isOverDailyFramingCap(): Promise<boolean> {
+export async function getFramingCallCountToday(): Promise<number> {
   rolloverFramingIfNewDay();
-  let current = framingCount;
   if (redis) {
     try {
       const globalCount = await redis.get<number>(framingUsageKey());
-      if (globalCount !== null) current = globalCount;
+      if (globalCount !== null) return globalCount;
     } catch (error) {
       console.warn("[anthropic] framing usage counter read failed:", error);
     }
   }
-  return current >= dailyFramingCap();
+  return framingCount;
+}
+
+export async function isOverDailyFramingCap(): Promise<boolean> {
+  return (await getFramingCallCountToday()) >= dailyFramingCap();
 }

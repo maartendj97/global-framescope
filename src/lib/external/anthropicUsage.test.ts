@@ -80,4 +80,18 @@ describe("anthropicUsage — framing cap", () => {
 
     expect(await isOverDailyFramingCap()).toBe(false);
   });
+
+  it("getFramingCallCountToday reads the shared Redis counter", async () => {
+    const get = vi.fn().mockResolvedValue(7);
+    const { getFramingCallCountToday } = await mockCacheAndImport({ get });
+
+    expect(await getFramingCallCountToday()).toBe(7);
+  });
+
+  it("getSummaryCallCountToday reads the shared Redis counter", async () => {
+    const get = vi.fn().mockResolvedValue(11);
+    const { getSummaryCallCountToday } = await mockCacheAndImport({ get });
+
+    expect(await getSummaryCallCountToday()).toBe(11);
+  });
 });

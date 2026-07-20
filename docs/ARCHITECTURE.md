@@ -29,6 +29,10 @@ Always check `node_modules/next/dist/docs/` for the exact current API before wri
 
 Next's own fetch cache was confirmed **not to work** on this Vercel setup (see the events-pool drift bug). All server-side caching goes through `src/lib/cache.ts` — a thin Upstash Redis wrapper (`getCached`/`setCached`) shared by every server instance, degrading gracefully to no-ops when the `KV_REST_API_*` env vars are absent (local dev). Current TTLs: events pool 3h, per-event records 7d, GNews coverage 24h, state RSS feeds 20min, GNews daily-usage counter 48h. Do **not** rely on `fetch` caching, `revalidate`, or `"use cache"` for anything that must actually be cached — use `src/lib/cache.ts`.
 
+### Observability
+
+`src/proxy.ts` (root-level, App Router matcher excludes `/api`, static assets, and metadata files) fires a Redis-backed visit counter (`src/lib/external/visitUsage.ts`) on every real page view via `event.waitUntil()`, so it never delays a response. Visitor identity is a salted SHA-256 hash of IP + calendar day (`VISIT_HASH_SALT`) — never a raw IP — added to a per-day Redis Set; `SCARD` gives the unique-visitor count. `GET /api/admin/metrics` (bearer-token gated by `METRICS_API_TOKEN`, 404s when unset) exposes visits plus the existing GNews/NewsData/Anthropic daily-usage counters as one JSON snapshot — the data source for the standalone dashboard app (`observability-dashboard/`, separate Vercel project, see its own README).
+
 ## Layer separation
 
 The codebase must keep these concerns separate so mock data can be swapped for real data sources later without rewriting the UI:
@@ -42,6 +46,7 @@ src/data/             mock data (raw fixtures — not imported directly by UI)
 src/lib/data/         data-access layer (getEvents, getEventById, ...)
 src/lib/external/     news-source integrations (gnews, currents, stateFeeds, budget guard, sanctions filter)
 src/lib/cache.ts      shared Upstash Redis cache wrapper
+src/proxy.ts          visit-counter proxy (see Observability below) — NOT middleware.ts, see Next.js 16 vs. training data
 ```
 
 The separation itself is a hard requirement, not a suggestion.

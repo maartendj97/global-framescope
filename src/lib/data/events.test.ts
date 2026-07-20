@@ -85,7 +85,7 @@ describe("getEvents", () => {
 
     expect(result).toEqual(currentsPool);
     expect(setCachedMock).toHaveBeenCalledWith(
-      "events-pool:v1",
+      "events-pool:v2",
       currentsPool,
       expect.any(Number)
     );

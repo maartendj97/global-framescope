@@ -18,7 +18,15 @@ const EVENTS_SOURCE = process.env.EVENTS_SOURCE ?? "live";
 //
 // 3h TTL keeps GNews usage where it was designed to be: 6 categories
 // x 8 refreshes/day = 48 calls/day.
-const EVENTS_POOL_KEY = "events-pool:v1";
+//
+// v2 (2026-07-20): bumped to force one immediate pool refresh so the
+// new clustering logic (gnews.ts) applies to the current pool right
+// away, instead of waiting up to 3h for the natural TTL expiry — the
+// cached v1 pool predates that deploy and still had near-duplicate
+// events split into separate cards. One-off cache bust, not a
+// recurring cost: costs exactly the one refresh cycle that would have
+// happened naturally anyway.
+const EVENTS_POOL_KEY = "events-pool:v2";
 const EVENTS_POOL_TTL_SECONDS = 3 * 60 * 60;
 
 // Each event is also stored under its own key with a longer lifetime,

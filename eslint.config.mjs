@@ -12,9 +12,6 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // Separate app with its own package.json, tsconfig, and lint config —
-    // see observability-dashboard/README.md.
-    "observability-dashboard/**",
   ]),
 ]);
 

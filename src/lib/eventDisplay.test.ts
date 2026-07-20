@@ -8,7 +8,7 @@ import {
   formatRelativeOrDate,
   getEventSourceCount,
 } from "./eventDisplay";
-import { CATEGORY_QUERIES } from "./external/gnews";
+import { CATEGORY_QUERIES, CATEGORY_QUERIES_NL } from "./external/gnews";
 
 function baseEvent(overrides: Partial<Event> = {}): Event {
   return {
@@ -77,6 +77,15 @@ describe("category mapping completeness", () => {
   it("has a GNews query for every category", () => {
     for (const category of ALL_CATEGORIES) {
       expect(CATEGORY_QUERIES[category], `missing CATEGORY_QUERIES entry for "${category}"`).toBeTruthy();
+    }
+  });
+
+  it("has a Dutch GNews query for every category", () => {
+    for (const category of ALL_CATEGORIES) {
+      expect(
+        CATEGORY_QUERIES_NL[category],
+        `missing CATEGORY_QUERIES_NL entry for "${category}"`
+      ).toBeTruthy();
     }
   });
 });

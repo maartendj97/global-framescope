@@ -121,6 +121,8 @@ export function buildEventFramingPrompt(
     `Then identify 2-4 key differences in how these countries frame the event differently from each other — specific, concrete contrasts, not vague generalities.`,
     ``,
     `Only include countries that have coverage listed above. Do not guess about the framing of a country with no coverage.`,
+    ``,
+    `Some source articles above may be in a language other than English (e.g. Dutch). Always write your response in English regardless of the source language.`,
   ].join("\n");
 }
 

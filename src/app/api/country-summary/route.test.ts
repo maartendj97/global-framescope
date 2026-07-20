@@ -66,6 +66,11 @@ describe("buildSummaryPrompt", () => {
     expect(prompt.toLowerCase()).toContain("do not invent");
   });
 
+  it("instructs the model to always respond in English regardless of source language", () => {
+    const prompt = buildSummaryPrompt(event, iran, [article("A")], "from-country");
+    expect(prompt.toLowerCase()).toContain("always write your summary in english");
+  });
+
   it("describes from-country articles as the country's own press", () => {
     const prompt = buildSummaryPrompt(event, iran, [article("A")], "from-country");
     expect(prompt).toContain("Iran's own press coverage");

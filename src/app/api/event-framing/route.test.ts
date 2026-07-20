@@ -102,6 +102,17 @@ describe("buildEventFramingPrompt", () => {
     expect(prompt.toLowerCase()).toContain("do not invent");
   });
 
+  it("instructs the model to always respond in English regardless of source language", async () => {
+    const buildEventFramingPrompt = await loadPromptBuilder();
+    const content = new Map<CountryCode, ArticleWithTier[]>([
+      ["IR", [{ article: article("A"), text: "body", tier: "full-text" }]],
+    ]);
+
+    const prompt = buildEventFramingPrompt(event, [iran], content);
+
+    expect(prompt.toLowerCase()).toContain("always write your response in english");
+  });
+
   it("tells the model to scale confidence to the content tier, and labels each article's tier", async () => {
     const buildEventFramingPrompt = await loadPromptBuilder();
     const content = new Map<CountryCode, ArticleWithTier[]>([

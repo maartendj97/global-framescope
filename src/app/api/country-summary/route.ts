@@ -81,6 +81,7 @@ export function buildSummaryPrompt(
     isMentionsOnly
       ? `In 2-3 plain sentences, summarize how ${country.name} figures in this international coverage — its role, position, or connection to the event as these headlines present it. Do not present this as ${country.name}'s own media framing. Do not invent details that the headlines don't support. Respond with the summary only, no preamble.`
       : `In 2-3 plain sentences, summarize how ${country.name}'s media is framing this event, based only on these headlines. Describe the angle and emphasis, not just the facts. Do not invent details that the headlines don't support. Respond with the summary only, no preamble.`,
+    `Some headlines above may be in a language other than English (e.g. Dutch). Always write your summary in English regardless of the source language.`,
   ].join("\n");
 }
 

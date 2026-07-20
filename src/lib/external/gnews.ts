@@ -22,6 +22,23 @@ export const CATEGORY_QUERIES: Record<EventCategory, string> = {
   humanitarian: "\"humanitarian crisis\" OR \"humanitarian aid\" OR \"refugee crisis\"",
 };
 
+// Dutch translations of the same curated phrases, used only for NL's
+// per-country coverage search (see fetchCountryCoverage in
+// src/app/api/country-sources/route.ts). GNews's `lang` filter narrows
+// results to that language, but doesn't translate `q` — searching Dutch
+// outlets with the English phrases above matches almost nothing, since
+// Dutch coverage is written in Dutch. Same curation rule as the English
+// set: quoted multi-word phrases only, to avoid single-word false
+// positives.
+export const CATEGORY_QUERIES_NL: Record<EventCategory, string> = {
+  conflict: "\"staakt-het-vuren\" OR \"vredesoverleg\" OR \"vredesonderhandelingen\"",
+  climate: "\"klimaattop\" OR \"emissieakkoord\" OR \"klimaatoverleg\"",
+  diplomacy: "\"kernonderhandelingen\" OR \"diplomatiek overleg\" OR \"nucleair overleg\"",
+  elections: "\"verkiezingsuitslag\" OR \"nationale verkiezingen\" OR \"presidentsverkiezingen\"",
+  trade: "\"handelsakkoord\" OR \"handelsovereenkomst\" OR \"tariefakkoord\"",
+  humanitarian: "\"humanitaire crisis\" OR \"humanitaire hulp\" OR \"vluchtelingencrisis\"",
+};
+
 type GNewsArticle = {
   title: string;
   description: string;

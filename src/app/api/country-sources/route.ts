@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCountries, getCountryByCode, getEventById } from "@/lib/data";
-import { CATEGORY_QUERIES } from "@/lib/external/gnews";
+import { CATEGORY_QUERIES, CATEGORY_QUERIES_NL } from "@/lib/external/gnews";
 import { getCached, setCached } from "@/lib/cache";
 import { isSanctionedPublisher } from "@/lib/external/blockedPublishers";
 import { isOverDailyBudget, recordGNewsCall } from "@/lib/external/gnewsUsage";
@@ -116,13 +116,25 @@ function toCountrySourceArticle(article: RawGNewsArticle): CountrySourceArticle 
 // Fetches a bigger pool than we display (10 vs. MAX_ARTICLES_PER_COUNTRY)
 // so capPerPublisher has room to swap in a second/third outlet instead of
 // just truncating a single-publisher-heavy result down to fewer articles.
-function buildStrictParams(query: string, country: CountryCode): URLSearchParams {
+function buildStrictParams(query: string, country: CountryCode, lang: string = "en"): URLSearchParams {
   return new URLSearchParams({
     q: query,
-    lang: "en",
+    lang,
     country: toGNewsCountry(country),
     max: "10",
     sortby: "publishedAt",
+  });
+}
+
+// Guards against the same article appearing twice when two separate
+// searches are merged (e.g. NL's English + Dutch strict tiers below).
+// Exported for tests.
+export function dedupeByUrl(articles: RawGNewsArticle[]): RawGNewsArticle[] {
+  const seen = new Set<string>();
+  return articles.filter((article) => {
+    if (seen.has(article.url)) return false;
+    seen.add(article.url);
+    return true;
   });
 }
 
@@ -207,11 +219,31 @@ export async function fetchCountryCoverage(
       `${contextPrefix}:${country}:strict`,
       throttle
     );
-    if (rawArticles.length > 0) {
-      const articles = capPerPublisher(rawArticles.map(toCountrySourceArticle), (a) => a.publisher, {
-        maxPerPublisher: MAX_PER_PUBLISHER,
-        maxTotal: MAX_ARTICLES_PER_COUNTRY,
-      });
+
+    // NL's own press mostly publishes in Dutch, so the English-only
+    // search above (lang=en) systematically undercounts it — GNews's
+    // `lang` filter doesn't translate `q`, so a Dutch article only
+    // matches a Dutch-language query. Merge in a second, Dutch-language
+    // search rather than only falling back to it, since the English tier
+    // above can return a thin (not zero) result for NL that would
+    // otherwise never trigger a fallback.
+    const dutchArticles =
+      country === "NL"
+        ? await fetchRawArticles(
+            buildStrictParams(CATEGORY_QUERIES_NL[event.category], country, "nl"),
+            apiKey,
+            `${contextPrefix}:${country}:strict-nl`,
+            throttle
+          )
+        : [];
+
+    const combinedArticles = dedupeByUrl([...rawArticles, ...dutchArticles]);
+    if (combinedArticles.length > 0) {
+      const articles = capPerPublisher(
+        combinedArticles.map(toCountrySourceArticle),
+        (a) => a.publisher,
+        { maxPerPublisher: MAX_PER_PUBLISHER, maxTotal: MAX_ARTICLES_PER_COUNTRY }
+      );
       return { articles, tier: "from-country" };
     }
   }

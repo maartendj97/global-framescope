@@ -1,6 +1,9 @@
 import { isOverDailyBudget, recordNewsDataCall } from "./newsdataUsage";
 import { isSanctionedPublisher } from "./blockedPublishers";
+import { capPerPublisher, MAX_PER_PUBLISHER } from "./articleCap";
 import type { CountryCode, CountrySourceArticle } from "@/types";
+
+const MAX_ARTICLES = 5;
 
 // Second aggregator for per-country coverage (see fetchCountryCoverage in
 // src/app/api/country-sources/route.ts), tried when GNews's strict
@@ -71,7 +74,10 @@ export async function fetchNewsDataCountryCoverage(
     const articles = (data.results ?? []).filter(
       (article) => !isSanctionedPublisher(article.source_name || article.source_id)
     );
-    return articles.slice(0, 5).map(toCountrySourceArticle);
+    return capPerPublisher(articles.map(toCountrySourceArticle), (a) => a.publisher, {
+      maxPerPublisher: MAX_PER_PUBLISHER,
+      maxTotal: MAX_ARTICLES,
+    });
   } catch (error) {
     console.error(`[newsdata] ${context} fetch failed:`, error);
     return [];

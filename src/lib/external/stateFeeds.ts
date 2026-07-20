@@ -2,6 +2,7 @@ import Parser from "rss-parser";
 import type { CountryCode, CountrySourceArticle, Event } from "@/types";
 import { getCached, setCached } from "@/lib/cache";
 import { CATEGORY_QUERIES } from "./gnews";
+import { capPerPublisher, MAX_PER_PUBLISHER } from "./articleCap";
 
 // Direct RSS feeds from state-run outlets in Russia, China and Iran.
 // Aggregators like GNews index these poorly, and the "who is speaking"
@@ -181,12 +182,16 @@ export async function fetchStateMediaCoverage(
 
   // Items matching more keywords rank first (they're most likely about
   // this exact story); ties break on recency.
-  return perFeedScored
+  const ranked = perFeedScored
     .flat()
     .sort((a, b) => {
       if (a.score !== b.score) return b.score - a.score;
       return a.article.publishedAt < b.article.publishedAt ? 1 : -1;
     })
-    .slice(0, MAX_STATE_ARTICLES)
     .map(({ article }) => article);
+
+  return capPerPublisher(ranked, (a) => a.publisher, {
+    maxPerPublisher: MAX_PER_PUBLISHER,
+    maxTotal: MAX_STATE_ARTICLES,
+  });
 }

@@ -6,7 +6,10 @@ import { isSanctionedPublisher } from "@/lib/external/blockedPublishers";
 import { isOverDailyBudget, recordGNewsCall } from "@/lib/external/gnewsUsage";
 import { fetchStateMediaCoverage, STATE_MEDIA_COUNTRIES } from "@/lib/external/stateFeeds";
 import { fetchNewsDataCountryCoverage } from "@/lib/external/newsdata";
+import { capPerPublisher, MAX_PER_PUBLISHER } from "@/lib/external/articleCap";
 import type { CountryCode, CountryCoverageResult, CountrySourceArticle, Event } from "@/types";
+
+const MAX_ARTICLES_PER_COUNTRY = 5;
 
 const GNEWS_ENDPOINT = "https://gnews.io/api/v4/search";
 
@@ -110,12 +113,15 @@ function toCountrySourceArticle(article: RawGNewsArticle): CountrySourceArticle 
   };
 }
 
+// Fetches a bigger pool than we display (10 vs. MAX_ARTICLES_PER_COUNTRY)
+// so capPerPublisher has room to swap in a second/third outlet instead of
+// just truncating a single-publisher-heavy result down to fewer articles.
 function buildStrictParams(query: string, country: CountryCode): URLSearchParams {
   return new URLSearchParams({
     q: query,
     lang: "en",
     country: toGNewsCountry(country),
-    max: "5",
+    max: "10",
     sortby: "publishedAt",
   });
 }
@@ -124,7 +130,7 @@ function buildFallbackParams(query: string, countryName: string): URLSearchParam
   return new URLSearchParams({
     q: `${query} AND "${countryName}"`,
     lang: "en",
-    max: "5",
+    max: "10",
     sortby: "publishedAt",
   });
 }
@@ -202,7 +208,11 @@ export async function fetchCountryCoverage(
       throttle
     );
     if (rawArticles.length > 0) {
-      return { articles: rawArticles.map(toCountrySourceArticle), tier: "from-country" };
+      const articles = capPerPublisher(rawArticles.map(toCountrySourceArticle), (a) => a.publisher, {
+        maxPerPublisher: MAX_PER_PUBLISHER,
+        maxTotal: MAX_ARTICLES_PER_COUNTRY,
+      });
+      return { articles, tier: "from-country" };
     }
   }
 
@@ -229,7 +239,11 @@ export async function fetchCountryCoverage(
   const matchedArticles = fallbackArticles.filter((article) =>
     matchesFallbackTier(article, countryRecord.name)
   );
-  return { articles: matchedArticles.map(toCountrySourceArticle), tier: "mentioning-country" };
+  const articles = capPerPublisher(matchedArticles.map(toCountrySourceArticle), (a) => a.publisher, {
+    maxPerPublisher: MAX_PER_PUBLISHER,
+    maxTotal: MAX_ARTICLES_PER_COUNTRY,
+  });
+  return { articles, tier: "mentioning-country" };
 }
 
 export async function GET(request: Request) {

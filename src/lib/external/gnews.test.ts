@@ -40,6 +40,21 @@ describe("clusterArticles", () => {
     expect(clusters).toHaveLength(2);
   });
 
+  it("merges headlines with 4+ shared keywords even when the ratio falls short", () => {
+    const clusters = clusterArticles([
+      article({
+        title: "Farmers' 'Delhi Chalo' March Halted Amid Police Barricading on Punjab-Haryana Border",
+        publisher: "PTI",
+      }),
+      article({
+        title: "Traffic Advisory Issued as Farmers Converge on Shambhu Border for Delhi March",
+        publisher: "Hindustan Times",
+      }),
+    ]);
+    expect(clusters).toHaveLength(1);
+    expect(clusters[0]).toHaveLength(2);
+  });
+
   it("keeps unrelated stories in separate clusters", () => {
     const clusters = clusterArticles([
       article({ title: "US and Iran agree ceasefire in Gulf tensions", publisher: "Reuters" }),

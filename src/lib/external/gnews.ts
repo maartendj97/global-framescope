@@ -93,6 +93,10 @@ function keywordOverlapRatio(a: Set<string>, b: Set<string>): number {
 
 const CLUSTER_SIMILARITY_THRESHOLD = 0.5;
 const CLUSTER_MIN_SHARED_KEYWORDS = 2;
+// A high absolute overlap (e.g. "Delhi", "farmers", "border", "march" all
+// shared) is strong same-story evidence on its own, even when the longer
+// headline's extra words dilute the ratio below CLUSTER_SIMILARITY_THRESHOLD.
+const CLUSTER_STRONG_SHARED_KEYWORDS = 4;
 
 // Groups articles that are almost certainly the same underlying story
 // (e.g. 4 publishers all covering the same ceasefire announcement) so
@@ -110,6 +114,7 @@ export function clusterArticles(articles: GNewsArticle[]): GNewsArticle[][] {
     const match = clusters.find((cluster) => {
       const shared = keywordOverlapRatio(keywords, cluster.keywords);
       const sharedCount = [...keywords].filter((word) => cluster.keywords.has(word)).length;
+      if (sharedCount >= CLUSTER_STRONG_SHARED_KEYWORDS) return true;
       return shared >= CLUSTER_SIMILARITY_THRESHOLD && sharedCount >= CLUSTER_MIN_SHARED_KEYWORDS;
     });
 

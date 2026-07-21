@@ -6,6 +6,9 @@ const SITE_URL = getSiteUrl();
 
 const STATIC_ROUTES = ["", "/events", "/about", "/settings"];
 
+// See src/app/(tabs)/page.tsx for why this is forced dynamic.
+export const dynamic = "force-dynamic";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = STATIC_ROUTES.map((path) => ({
     url: `${SITE_URL}${path}`,

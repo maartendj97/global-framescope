@@ -4,6 +4,13 @@ import { EventCard } from "@/components/EventCard";
 import { StaggerItem } from "@/components/StaggerItem";
 import { getEventSourceCount } from "@/lib/eventDisplay";
 
+// Skip Next's static-generation attempt for this route: it always reads
+// the live events pool (no-store), so prerendering can only ever bail
+// out dynamic anyway — but the bail-out probe itself runs real code,
+// hitting Redis/GNews at build time and logging their thrown
+// DYNAMIC_SERVER_USAGE control-flow signal as if it were a real failure.
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   const [events, countries] = await Promise.all([getEvents(), getCountries()]);
   const sourceCountByEventId = await getSourceCountsByEventIds(

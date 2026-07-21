@@ -1,6 +1,9 @@
 import { getCountries, getEvents, getSourceCountsByEventIds } from "@/lib/data";
 import { EventsList } from "@/components/EventsList";
 
+// See src/app/(tabs)/page.tsx for why this is forced dynamic.
+export const dynamic = "force-dynamic";
+
 export default async function EventsPage() {
   const [events, countries] = await Promise.all([getEvents(), getCountries()]);
   const sourceCountByEventId = await getSourceCountsByEventIds(

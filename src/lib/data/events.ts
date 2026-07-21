@@ -26,7 +26,10 @@ const EVENTS_SOURCE = process.env.EVENTS_SOURCE ?? "live";
 // events split into separate cards. One-off cache bust, not a
 // recurring cost: costs exactly the one refresh cycle that would have
 // happened naturally anyway.
-const EVENTS_POOL_KEY = "events-pool:v3";
+// v3/v4 (2026-07-21): same one-off bust, twice in one day — v3 verified
+// the strong-shared-keyword rule, which surfaced a second clustering bug
+// (frozen cluster.keywords) fixed right after; v4 verifies that fix.
+const EVENTS_POOL_KEY = "events-pool:v4";
 const EVENTS_POOL_TTL_SECONDS = 3 * 60 * 60;
 
 // Each event is also stored under its own key with a longer lifetime,

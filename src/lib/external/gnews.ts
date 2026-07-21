@@ -120,6 +120,11 @@ export function clusterArticles(articles: GNewsArticle[]): GNewsArticle[][] {
 
     if (match) {
       match.items.push(article);
+      // Fold the new article's keywords into the cluster's matching set —
+      // otherwise a 3rd+ article is only ever compared against whichever
+      // article happened to arrive first, even when it's a closer match to
+      // the 2nd, and stays wrongly unclustered.
+      for (const word of keywords) match.keywords.add(word);
     } else {
       clusters.push({ keywords, items: [article] });
     }

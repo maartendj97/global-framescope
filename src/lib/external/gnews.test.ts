@@ -55,6 +55,25 @@ describe("clusterArticles", () => {
     expect(clusters[0]).toHaveLength(2);
   });
 
+  it("merges a 3rd article that matches the 2nd but not the founding 1st article", () => {
+    const clusters = clusterArticles([
+      article({
+        title: "Ambala Police Issue Traffic Advisory After Shambhu Border Closure",
+        publisher: "Wire A",
+      }),
+      article({
+        title: "Traffic Advisory Issued as Farmers Converge on Shambhu Border for Delhi March",
+        publisher: "Wire B",
+      }),
+      article({
+        title: "Farmers' 'Delhi Chalo' March Halted Amid Police Barricading on Punjab-Haryana Border",
+        publisher: "Wire C",
+      }),
+    ]);
+    expect(clusters).toHaveLength(1);
+    expect(clusters[0]).toHaveLength(3);
+  });
+
   it("keeps unrelated stories in separate clusters", () => {
     const clusters = clusterArticles([
       article({ title: "US and Iran agree ceasefire in Gulf tensions", publisher: "Reuters" }),

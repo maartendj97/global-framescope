@@ -1,6 +1,7 @@
 import { ALL_CATEGORIES, ALL_COUNTRY_CODES } from "@/types";
 import type { Event, EventCategory } from "@/types";
 import { isSanctionedPublisher } from "./blockedPublishers";
+import { isOverDailyBudget, recordCurrentsCall } from "./currentsUsage";
 
 // Currents API is a backup news source for the events pool: it only runs
 // when GNews returns nothing (an outage or the daily cap), so the event
@@ -77,13 +78,20 @@ async function fetchCurrentsCategory(
   category: EventCategory,
   apiKey: string
 ): Promise<CurrentsArticle[]> {
+  const context = `events:${category}`;
+
+  if (await isOverDailyBudget()) {
+    console.log(`[currents] skipped (daily budget guard) — ${context}`);
+    return [];
+  }
+
   const params = new URLSearchParams({
     keywords: CATEGORY_KEYWORDS[category],
     language: "en",
   });
 
   try {
-    console.log(`[currents] call (events:${category})`);
+    await recordCurrentsCall(context);
     const response = await fetch(`${CURRENTS_ENDPOINT}?${params.toString()}`, {
       headers: { Authorization: apiKey },
       signal: AbortSignal.timeout(5000),

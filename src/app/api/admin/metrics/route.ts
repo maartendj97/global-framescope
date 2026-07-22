@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { getGNewsCallCountToday } from "@/lib/external/gnewsUsage";
 import { getNewsDataCallCountToday } from "@/lib/external/newsdataUsage";
+import { getCurrentsCallCountToday } from "@/lib/external/currentsUsage";
 import {
   dailyFramingCap,
   dailySummaryCap,
@@ -19,6 +20,7 @@ export type MetricsResponse = {
   visits: { total: number; unique: number };
   gnews: { count: number; cap: number };
   newsdata: { count: number; cap: number };
+  currents: { count: number; cap: number };
   anthropic: {
     summaries: { count: number; cap: number };
     framing: { count: number; cap: number };
@@ -27,6 +29,7 @@ export type MetricsResponse = {
 
 const GNEWS_SAFE_DAILY_BUDGET = 85;
 const NEWSDATA_SAFE_DAILY_BUDGET = 150;
+const CURRENTS_SAFE_DAILY_BUDGET = 900;
 
 // process.env values are ordinary strings, not Buffers — timingSafeEqual
 // needs equal-length Buffers, so a length mismatch is checked first
@@ -52,11 +55,12 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const [visits, uniqueVisits, gnews, newsdata, summaries, framing] = await Promise.all([
+  const [visits, uniqueVisits, gnews, newsdata, currents, summaries, framing] = await Promise.all([
     getVisitCountToday(),
     getUniqueVisitCountToday(),
     getGNewsCallCountToday(),
     getNewsDataCallCountToday(),
+    getCurrentsCallCountToday(),
     getSummaryCallCountToday(),
     getFramingCallCountToday(),
   ]);
@@ -65,6 +69,7 @@ export async function GET(request: Request) {
     visits: { total: visits, unique: uniqueVisits },
     gnews: { count: gnews, cap: GNEWS_SAFE_DAILY_BUDGET },
     newsdata: { count: newsdata, cap: NEWSDATA_SAFE_DAILY_BUDGET },
+    currents: { count: currents, cap: CURRENTS_SAFE_DAILY_BUDGET },
     anthropic: {
       summaries: { count: summaries, cap: dailySummaryCap() },
       framing: { count: framing, cap: dailyFramingCap() },

@@ -4,6 +4,9 @@ vi.mock("@/lib/external/gnewsUsage", () => ({ getGNewsCallCountToday: vi.fn().mo
 vi.mock("@/lib/external/newsdataUsage", () => ({
   getNewsDataCallCountToday: vi.fn().mockResolvedValue(20),
 }));
+vi.mock("@/lib/external/currentsUsage", () => ({
+  getCurrentsCallCountToday: vi.fn().mockResolvedValue(7),
+}));
 vi.mock("@/lib/external/anthropicUsage", () => ({
   getSummaryCallCountToday: vi.fn().mockResolvedValue(30),
   getFramingCallCountToday: vi.fn().mockResolvedValue(5),
@@ -64,6 +67,7 @@ describe("GET /api/admin/metrics", () => {
       visits: { total: 100, unique: 40 },
       gnews: { count: 10, cap: 85 },
       newsdata: { count: 20, cap: 150 },
+      currents: { count: 7, cap: 900 },
       anthropic: {
         summaries: { count: 30, cap: 300 },
         framing: { count: 5, cap: 50 },

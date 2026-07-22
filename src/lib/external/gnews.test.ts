@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clusterArticles } from "./gnews";
+import { clusterArticles, mapClusterToEvent } from "./gnews";
 
 function article(overrides: {
   title: string;
@@ -101,5 +101,46 @@ describe("clusterArticles", () => {
 
   it("handles an empty article list", () => {
     expect(clusterArticles([])).toEqual([]);
+  });
+});
+
+describe("mapClusterToEvent", () => {
+  // Regression for the silent-collision bug: id used to be just
+  // category-publisher-date, so two unrelated same-day stories sharing a
+  // publisher collided and the second was dropped by fetchLiveEvents'
+  // seenIds check.
+  it("gives distinct same-day, same-publisher, same-category stories different ids", () => {
+    const ceasefire = mapClusterToEvent(
+      [article({ title: "US and Iran agree ceasefire ending Gulf tensions", publisher: "Reuters" })],
+      "conflict"
+    );
+    const election = mapClusterToEvent(
+      [article({ title: "Opposition contests national election results", publisher: "Reuters" })],
+      "conflict"
+    );
+    expect(ceasefire.id).not.toBe(election.id);
+  });
+
+  it("picks the article with the longest description as primary", () => {
+    const event = mapClusterToEvent(
+      [
+        article({ title: "Short version", description: "Brief.", publisher: "Wire A" }),
+        article({ title: "Long version", description: "A much longer, more detailed account.", publisher: "Wire B" }),
+      ],
+      "conflict"
+    );
+    expect(event.title).toBe("Long version");
+  });
+
+  it("counts each distinct publisher once even if it appears twice in the cluster", () => {
+    const event = mapClusterToEvent(
+      [
+        article({ title: "First filing", publisher: "Reuters" }),
+        article({ title: "Updated filing", publisher: "reuters" }),
+        article({ title: "Third outlet covers it", publisher: "AP" }),
+      ],
+      "conflict"
+    );
+    expect(event.sources).toHaveLength(2);
   });
 });

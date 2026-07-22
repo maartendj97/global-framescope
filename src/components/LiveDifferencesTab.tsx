@@ -3,7 +3,7 @@
 import useSWR from "swr";
 import type { Country, CountryCode, Event, EventCountryFraming, EventKeyDifference } from "@/types";
 import { Flag } from "./Flag";
-import { ToneBadge } from "./ToneBadge";
+import { FramingTable } from "./FramingTable";
 import { fetcher, SWR_OPTIONS } from "@/lib/swrFetcher";
 
 type LiveDifferencesTabProps = {
@@ -32,7 +32,6 @@ export function LiveDifferencesTab({ event, countries }: LiveDifferencesTabProps
 
   const loading = !error && data === undefined;
   const pending = data?.pending === true;
-  const framingByCode = new Map((data?.framings ?? []).map((f) => [f.countryCode, f]));
   const hasContent = !!data && !pending && (data.framings.length > 0 || data.differences.length > 0);
   const notCoveredByCountries = (data?.notCoveredBy ?? [])
     .map((code) => countries.find((country) => country.code === code))
@@ -127,36 +126,7 @@ export function LiveDifferencesTab({ event, countries }: LiveDifferencesTabProps
 
       {hasContent && data.framings.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-foreground">Comparison overview</h3>
-          <div className="mt-3 overflow-x-auto rounded-2xl border border-border">
-            <table className="w-full min-w-[420px] border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-border bg-surface-secondary text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  <th className="px-3 py-2">Country</th>
-                  <th className="px-3 py-2">Main frame</th>
-                  <th className="px-3 py-2">Tone</th>
-                </tr>
-              </thead>
-              <tbody>
-                {countries.map((country) => {
-                  const framing = framingByCode.get(country.code);
-                  if (!framing) return null;
-                  return (
-                    <tr key={country.code} className="border-b border-border last:border-0">
-                      <td className="px-3 py-2 whitespace-nowrap text-foreground">
-                        <Flag code={country.code} className="mr-1.5 h-3.5 w-5" aria-hidden="true" />
-                        {country.name}
-                      </td>
-                      <td className="px-3 py-2 text-foreground">{framing.mainFrame}</td>
-                      <td className="px-3 py-2">
-                        <ToneBadge tone={framing.toneCategory} />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <FramingTable countries={countries} framings={data.framings} />
           <p className="mt-2 text-xs text-muted-foreground">
             AI-generated from real headlines and, where available, full article text — read the
             Countries tab for the underlying sources.

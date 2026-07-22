@@ -1,7 +1,7 @@
 import { ALL_CATEGORIES, ALL_COUNTRY_CODES } from "@/types";
 import type { Event, EventCategory } from "@/types";
 import { isSanctionedPublisher } from "./blockedPublishers";
-import { recordGNewsCall } from "./gnewsUsage";
+import { isOverDailyBudget, recordGNewsCall } from "./gnewsUsage";
 
 const GNEWS_ENDPOINT = "https://gnews.io/api/v4/search";
 
@@ -133,7 +133,7 @@ export function clusterArticles(articles: GNewsArticle[]): GNewsArticle[][] {
   return clusters.map((cluster) => cluster.items);
 }
 
-function mapClusterToEvent(cluster: GNewsArticle[], category: EventCategory): Event {
+export function mapClusterToEvent(cluster: GNewsArticle[], category: EventCategory): Event {
   // The article with the longest description leads the merged event —
   // richer source content makes a better summary/context than picking
   // whichever article happened to be fetched first.
@@ -158,8 +158,13 @@ function mapClusterToEvent(cluster: GNewsArticle[], category: EventCategory): Ev
   // narrowed from the article the way GDELT's sourcecountry allowed —
   // falls back to every covered country, same as the mock data. Harmless
   // since CountryFraming remains mock/curated regardless.
+  // Publisher+date alone collides whenever two unrelated same-day stories
+  // in the same category share a primary source — a slice of the title
+  // makes the id unique per story instead of silently dropping the second
+  // one as a false duplicate in fetchLiveEvents' seenIds check below.
+  const titleSlug = slugify(primary.title).split("-").slice(0, 6).join("-");
   return {
-    id: `${category}-${slugify(primary.source.name)}-${primary.publishedAt.slice(0, 10)}`,
+    id: `${category}-${slugify(primary.source.name)}-${primary.publishedAt.slice(0, 10)}-${titleSlug}`,
     title: primary.title,
     category,
     date: primary.publishedAt.slice(0, 10),
@@ -189,6 +194,16 @@ async function fetchGNewsCategory(
     sortby: "publishedAt",
     apikey: apiKey,
   });
+
+  // Same hard safety backstop as country-sources' fetchRawArticles: this
+  // baseline events-pool refresh is what SAFE_DAILY_BUDGET's headroom is
+  // reserved for, but forced/manual pool refreshes (e.g. a cache-key
+  // bump) still share the same real daily cap, so it needs the same
+  // check rather than assuming it's implicitly protected.
+  if (await isOverDailyBudget()) {
+    console.log(`[gnews] skipped (daily budget guard) — events:${category}`);
+    return [];
+  }
 
   try {
     await recordGNewsCall(`events:${category}`);

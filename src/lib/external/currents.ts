@@ -41,14 +41,20 @@ function slugify(value: string): string {
     .replace(/(^-|-$)/g, "");
 }
 
-function mapArticleToEvent(article: CurrentsArticle, category: EventCategory): Event {
+export function mapArticleToEvent(article: CurrentsArticle, category: EventCategory): Event {
   const publisher = article.author || "Unknown source";
   // Currents returns the literal string "None" when an article has no
   // image — treat that as no image so it falls back to the category art.
   const imageUrl = article.image && article.image !== "None" ? article.image : undefined;
 
+  // Publisher+date alone collides whenever two unrelated same-day stories
+  // in the same category share a publisher (or both default to "Unknown
+  // source") — a slice of the title makes the id unique per story instead
+  // of silently dropping the second one as a false duplicate in
+  // fetchCurrentsEvents' seenIds check below.
+  const titleSlug = slugify(article.title).split("-").slice(0, 6).join("-");
   return {
-    id: `${category}-${slugify(publisher)}-${article.published.slice(0, 10)}`,
+    id: `${category}-${slugify(publisher)}-${article.published.slice(0, 10)}-${titleSlug}`,
     title: article.title,
     category,
     date: article.published.slice(0, 10),

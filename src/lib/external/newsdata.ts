@@ -29,7 +29,7 @@ type NewsDataArticle = {
   source_name?: string;
 };
 
-function toCountrySourceArticle(article: NewsDataArticle): CountrySourceArticle {
+export function toCountrySourceArticle(article: NewsDataArticle): CountrySourceArticle {
   return {
     title: article.title,
     url: article.link,

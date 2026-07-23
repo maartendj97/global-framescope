@@ -33,6 +33,21 @@ const EXTRACTION_CONCURRENCY = 5;
 // Keeps worst-case prompt size (and cost) predictable at up to ~40
 // articles per event — roughly the lead plus a few paragraphs.
 const MAX_BODY_CHARS_PER_ARTICLE = 1500;
+// Aggregate cap across the whole event, on top of the per-article cap
+// above. Dense categories (e.g. conflict) can have many full-text
+// extractions succeed at once — even at 1500 chars each that adds up to
+// a prompt large enough that Sonnet 5's adaptive thinking exhausts
+// max_tokens before finishing the structured JSON output, truncating it
+// mid-parse (see the 2026-07-23 "Unexpected end of JSON input" incident,
+// confirmed via the admin logs endpoint). Once this budget is spent,
+// remaining articles fall back to the shorter description tier even when
+// extraction succeeded — the same honest-tier mechanism the prompt
+// already explains to the model, just capped in aggregate rather than
+// only per-article.
+const MAX_TOTAL_BODY_CHARS = 20000;
+// Below this, slicing a full-text extraction down to fit the remaining
+// budget would produce a fragment too short to honestly call "full-text".
+const MIN_FULLTEXT_CHARS = 200;
 
 export type EventFramingResponse = EventFramingResult & { pending?: boolean };
 
@@ -58,12 +73,15 @@ export async function buildEventFramingContent(
     EXTRACTION_CONCURRENCY
   );
 
+  let remainingBodyBudget = MAX_TOTAL_BODY_CHARS;
   const result = new Map<CountryCode, ArticleWithTier[]>();
   for (const { country, articles } of coverageByCountry) {
     const withTiers = articles.map((article): ArticleWithTier => {
       const fullText = extracted.get(article.url);
-      if (fullText) {
-        return { article, text: fullText.slice(0, MAX_BODY_CHARS_PER_ARTICLE), tier: "full-text" };
+      if (fullText && remainingBodyBudget >= MIN_FULLTEXT_CHARS) {
+        const text = fullText.slice(0, Math.min(MAX_BODY_CHARS_PER_ARTICLE, remainingBodyBudget));
+        remainingBodyBudget -= text.length;
+        return { article, text, tier: "full-text" };
       }
       if (article.description) {
         return {
@@ -184,37 +202,65 @@ async function generateEventFraming(
   apiKey: string
 ): Promise<Omit<EventFramingResult, "notCoveredBy"> | null> {
   const client = new Anthropic({ apiKey });
-  try {
-    await recordFramingGeneration(`event-framing:${event.id}`);
-    const response = await client.messages.create({
-      model: "claude-sonnet-5",
-      // Sonnet 5 runs adaptive thinking by default, and those thinking
-      // tokens count against max_tokens. 2000 left no headroom for the
-      // 8-country structured JSON after thinking, truncating the output
-      // mid-JSON and failing the parse below — confirmed locally against
-      // this exact prompt shape. 8000 gives both phases comfortable room.
-      max_tokens: 8000,
-      output_config: { format: { type: "json_schema", schema: EVENT_FRAMING_JSON_SCHEMA } },
-      messages: [
-        { role: "user", content: buildEventFramingPrompt(event, countries, contentByCountry) },
-      ],
-    });
-    const text = response.content
-      .filter((block) => block.type === "text")
-      .map((block) => block.text)
-      .join("");
-    const parsed = JSON.parse(text) as { framings: RawFraming[]; differences: RawDifference[] };
-    return {
-      framings: parsed.framings.map((framing) => ({ ...framing, eventId: event.id })),
-      differences: parsed.differences.map((difference) => ({ ...difference, eventId: event.id })),
-    };
-  } catch (error) {
-    // A model outage, malformed JSON, or bad key must never break the
-    // Differences tab — the client renders the honest empty state.
-    console.error(`[anthropic] framing generation failed for ${event.id}:`, error);
-    await recordError("anthropic-framing", `${event.id} failed: ${describeError(error)}`);
-    return null;
+  const prompt = buildEventFramingPrompt(event, countries, contentByCountry);
+
+  // "high" (the API default) first, then one retry at "medium" if — and
+  // only if — the first attempt's failure was a JSON parse error. A lower
+  // effort level spends less of max_tokens on adaptive thinking, which is
+  // the specific failure this retries: thinking eating the whole budget
+  // before the structured JSON finishes, truncating it mid-parse (see the
+  // 2026-07-23 "Unexpected end of JSON input" incident). A genuine API
+  // failure (bad key, rate limit, outage) isn't retried — a different
+  // effort level wouldn't fix that, so it isn't worth a second real call.
+  const efforts = ["high", "medium"] as const;
+  for (let i = 0; i < efforts.length; i++) {
+    const effort = efforts[i];
+    let text: string;
+    try {
+      await recordFramingGeneration(`event-framing:${event.id}`);
+      const response = await client.messages.create({
+        model: "claude-sonnet-5",
+        // Sonnet 5 runs adaptive thinking by default, and those thinking
+        // tokens count against max_tokens. 2000 left no headroom for the
+        // 8-country structured JSON after thinking, truncating the output
+        // mid-JSON and failing the parse below — confirmed locally against
+        // this exact prompt shape. 8000 gives both phases comfortable room
+        // in the common case; the effort retry below covers the rest.
+        max_tokens: 8000,
+        output_config: { format: { type: "json_schema", schema: EVENT_FRAMING_JSON_SCHEMA }, effort },
+        messages: [{ role: "user", content: prompt }],
+      });
+      text = response.content
+        .filter((block) => block.type === "text")
+        .map((block) => block.text)
+        .join("");
+    } catch (error) {
+      console.error(`[anthropic] framing generation failed for ${event.id}:`, error);
+      await recordError("anthropic-framing", `${event.id} failed: ${describeError(error)}`);
+      return null;
+    }
+
+    try {
+      const parsed = JSON.parse(text) as { framings: RawFraming[]; differences: RawDifference[] };
+      return {
+        framings: parsed.framings.map((framing) => ({ ...framing, eventId: event.id })),
+        differences: parsed.differences.map((difference) => ({ ...difference, eventId: event.id })),
+      };
+    } catch (error) {
+      // A model outage, malformed JSON, or bad key must never break the
+      // Differences tab — the client renders the honest empty state.
+      console.error(
+        `[anthropic] framing JSON parse failed for ${event.id} (effort=${effort}):`,
+        error
+      );
+      await recordError(
+        "anthropic-framing",
+        `${event.id} JSON parse failed (effort=${effort}): ${describeError(error)}`
+      );
+      if (i === efforts.length - 1) return null;
+    }
   }
+  return null;
 }
 
 // Mirrors country-summary/route.ts's waitForCachedSummary: a brief poll

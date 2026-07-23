@@ -41,4 +41,10 @@ export type EventFramingResult = {
   // for the event (see Event.availableCountries): this means coverage
   // was searched for and came back empty.
   notCoveredBy: CountryCode[];
+  // True when real coverage existed and generation was attempted but
+  // didn't produce usable output (API error, or JSON truncated on both
+  // effort retries — see event-framing/route.ts). Lets the client tell
+  // "we tried and failed" apart from "genuinely nothing to compare",
+  // which otherwise render as the same empty arrays.
+  generationFailed?: boolean;
 };

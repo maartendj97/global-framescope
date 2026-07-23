@@ -277,6 +277,9 @@ describe("GET /api/event-framing", () => {
 
     const response = await GET(new Request("http://localhost/api/event-framing?eventId=evt-1"));
 
+    // No generationFailed here (implicitly undefined, matched by toEqual)
+    // — generation was never attempted, so this is genuinely "nothing to
+    // compare" rather than a failure, unlike the two tests below.
     expect(await response.json()).toEqual({
       framings: [],
       differences: [],
@@ -389,7 +392,7 @@ describe("GET /api/event-framing", () => {
     vi.unstubAllEnvs();
   });
 
-  it("degrades to an empty result (never throws) when the Anthropic call fails", async () => {
+  it("degrades to an empty result (never throws) when the Anthropic call fails, flagged as a real failure", async () => {
     vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
     const { GET } = await mockRouteDeps({
       fetchCountryCoverage: vi.fn().mockResolvedValue({ articles: [article("A")], tier: "from-country" }),
@@ -398,7 +401,12 @@ describe("GET /api/event-framing", () => {
 
     const response = await GET(new Request("http://localhost/api/event-framing?eventId=evt-1"));
 
-    expect(await response.json()).toEqual({ framings: [], differences: [], notCoveredBy: [] });
+    expect(await response.json()).toEqual({
+      framings: [],
+      differences: [],
+      notCoveredBy: [],
+      generationFailed: true,
+    });
     vi.unstubAllEnvs();
   });
 
@@ -446,7 +454,7 @@ describe("GET /api/event-framing", () => {
     vi.unstubAllEnvs();
   });
 
-  it("degrades to an empty result when both the high- and medium-effort attempts fail to parse", async () => {
+  it("degrades to an empty result when both the high- and medium-effort attempts fail to parse, flagged as a real failure", async () => {
     vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
     const anthropicCreate = vi.fn().mockResolvedValue({
       content: [{ type: "text", text: "{\"framings\": [truncated" }],
@@ -458,7 +466,12 @@ describe("GET /api/event-framing", () => {
 
     const response = await GET(new Request("http://localhost/api/event-framing?eventId=evt-1"));
 
-    expect(await response.json()).toEqual({ framings: [], differences: [], notCoveredBy: [] });
+    expect(await response.json()).toEqual({
+      framings: [],
+      differences: [],
+      notCoveredBy: [],
+      generationFailed: true,
+    });
     expect(anthropicCreate).toHaveBeenCalledTimes(2);
     vi.unstubAllEnvs();
   });

@@ -355,9 +355,14 @@ export async function GET(request: Request) {
 
   const contentByCountry = await buildEventFramingContent(coverageByCountry);
   const result = await generateEventFraming(event, countries, contentByCountry, apiKey);
+  // Coverage existed and generation was actually attempted here (unlike
+  // the zero-coverage short-circuit above) — a null result means it tried
+  // and failed, not that there was nothing to compare. Surfaced so the
+  // client can show an honest "failed" state instead of the same empty
+  // arrays a real no-coverage event produces.
   const finalResult: EventFramingResult = result
     ? { ...result, notCoveredBy }
-    : { ...EMPTY_RESULT, notCoveredBy };
+    : { ...EMPTY_RESULT, notCoveredBy, generationFailed: true };
   if (result) {
     await setCached(key, finalResult, FRAMING_TTL_SECONDS);
   }

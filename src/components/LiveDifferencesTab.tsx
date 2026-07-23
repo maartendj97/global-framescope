@@ -16,6 +16,7 @@ type EventFramingResponse = {
   differences: EventKeyDifference[];
   notCoveredBy: CountryCode[];
   pending?: boolean;
+  generationFailed?: boolean;
 };
 
 export function LiveDifferencesTab({ event, countries }: LiveDifferencesTabProps) {
@@ -82,8 +83,9 @@ export function LiveDifferencesTab({ event, countries }: LiveDifferencesTabProps
           <h3 className="text-sm font-semibold text-foreground">Comparison overview</h3>
           <div className="mt-3 rounded-2xl border border-border bg-surface p-4">
             <p className="text-sm text-muted-foreground">
-              A comparison isn&rsquo;t available for this event right now — check the Countries
-              tab for real coverage from each country instead.
+              {data.generationFailed
+                ? "This comparison couldn’t be generated — this story may be too large for our system to process right now. Check the Countries tab for real coverage from each country instead."
+                : "A comparison isn’t available for this event right now — check the Countries tab for real coverage from each country instead."}
             </p>
           </div>
         </div>

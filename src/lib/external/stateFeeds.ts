@@ -3,6 +3,7 @@ import type { CountryCode, CountrySourceArticle, Event } from "@/types";
 import { getCached, setCached } from "@/lib/cache";
 import { CATEGORY_QUERIES } from "./gnews";
 import { capPerPublisher, MAX_PER_PUBLISHER } from "./articleCap";
+import { describeError, recordError } from "./errorLog";
 
 // Direct RSS feeds from state-run outlets in Russia, China and Iran.
 // Aggregators like GNews index these poorly, and the "who is speaking"
@@ -127,6 +128,7 @@ async function fetchFeedItems(url: string): Promise<StateFeedItem[]> {
     });
     if (!response.ok) {
       console.error(`[statefeeds] ${url} responded ${response.status}`);
+      await recordError("statefeeds", `${url} responded ${response.status}`);
       return [];
     }
     const xml = await response.text();
@@ -143,6 +145,7 @@ async function fetchFeedItems(url: string): Promise<StateFeedItem[]> {
     return items;
   } catch (error) {
     console.error(`[statefeeds] ${url} fetch failed:`, error);
+    await recordError("statefeeds", `${url} fetch failed: ${describeError(error)}`);
     return [];
   }
 }

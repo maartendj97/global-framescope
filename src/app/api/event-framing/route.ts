@@ -6,6 +6,7 @@ import { fetchCountryCoverage } from "@/app/api/country-sources/route";
 import { createThrottle } from "@/app/api/event-sources/route";
 import { extractManyWithBudget } from "@/lib/external/articleExtractor";
 import { isOverDailyFramingCap, recordFramingGeneration } from "@/lib/external/anthropicUsage";
+import { describeError, recordError } from "@/lib/external/errorLog";
 import { ALL_COUNTRY_CODES } from "@/types/country";
 import type {
   ContentTier,
@@ -211,6 +212,7 @@ async function generateEventFraming(
     // A model outage, malformed JSON, or bad key must never break the
     // Differences tab — the client renders the honest empty state.
     console.error(`[anthropic] framing generation failed for ${event.id}:`, error);
+    await recordError("anthropic-framing", `${event.id} failed: ${describeError(error)}`);
     return null;
   }
 }

@@ -2,6 +2,7 @@ import { ALL_CATEGORIES, ALL_COUNTRY_CODES } from "@/types";
 import type { Event, EventCategory } from "@/types";
 import { isSanctionedPublisher } from "./blockedPublishers";
 import { isOverDailyBudget, recordCurrentsCall } from "./currentsUsage";
+import { describeError, recordError } from "./errorLog";
 
 // Currents API is a backup news source for the events pool: it only runs
 // when GNews returns nothing (an outage or the daily cap), so the event
@@ -98,12 +99,14 @@ async function fetchCurrentsCategory(
     });
     if (!response.ok) {
       console.error(`[currents] events:${category} responded ${response.status}`);
+      await recordError("currents", `events:${category} responded ${response.status}`);
       return [];
     }
     const data = (await response.json()) as { news?: CurrentsArticle[] };
     return (data.news ?? []).slice(0, MAX_PER_CATEGORY);
   } catch (error) {
     console.error(`[currents] events:${category} fetch failed:`, error);
+    await recordError("currents", `events:${category} fetch failed: ${describeError(error)}`);
     return [];
   }
 }

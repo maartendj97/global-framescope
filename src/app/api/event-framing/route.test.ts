@@ -82,6 +82,25 @@ describe("buildEventFramingContent", () => {
 
     expect(result.get("IR")?.[0].text.length).toBe(1500);
   });
+
+  it("downgrades to description tier once the aggregate body budget is spent, even when extraction succeeded", async () => {
+    vi.resetModules();
+    // 20 articles at 1500 chars each (the per-article cap) = 30,000 chars,
+    // well over the 20,000 aggregate budget — the last several should be
+    // downgraded even though extraction "succeeded" for all of them.
+    const articles = Array.from({ length: 20 }, (_, i) => article(`A${i}`, { description: `desc ${i}` }));
+    const extractedEntries: [string, string][] = articles.map((a) => [a.url, "x".repeat(1500)]);
+    vi.doMock("@/lib/external/articleExtractor", () => ({
+      extractManyWithBudget: vi.fn().mockResolvedValue(new Map(extractedEntries)),
+    }));
+    const { buildEventFramingContent } = await import("./route");
+
+    const result = await buildEventFramingContent([{ country: iran, articles }]);
+    const tiers = result.get("IR")!.map((a) => a.tier);
+
+    expect(tiers.filter((t) => t === "full-text").length).toBeLessThan(articles.length);
+    expect(tiers).toContain("description");
+  });
 });
 
 describe("buildEventFramingPrompt", () => {
@@ -380,6 +399,81 @@ describe("GET /api/event-framing", () => {
     const response = await GET(new Request("http://localhost/api/event-framing?eventId=evt-1"));
 
     expect(await response.json()).toEqual({ framings: [], differences: [], notCoveredBy: [] });
+    vi.unstubAllEnvs();
+  });
+
+  it("retries once at a lower effort after a JSON parse failure, and succeeds on the retry", async () => {
+    vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
+    const anthropicCreate = vi
+      .fn()
+      .mockResolvedValueOnce({ content: [{ type: "text", text: "{\"framings\": [truncated" }] })
+      .mockResolvedValueOnce({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              framings: [
+                {
+                  countryCode: "IR",
+                  mainFrame: "Frame",
+                  toneCategory: "critical",
+                  keyEmphasis: ["a"],
+                  mainNarrative: "Narrative",
+                  contentTier: "headline-only",
+                },
+              ],
+              differences: [],
+            }),
+          },
+        ],
+      });
+    const { GET } = await mockRouteDeps({
+      fetchCountryCoverage: vi.fn().mockResolvedValue({ articles: [article("A")], tier: "from-country" }),
+      anthropicCreate,
+    });
+
+    const response = await GET(new Request("http://localhost/api/event-framing?eventId=evt-1"));
+    const body = await response.json();
+
+    expect(body.framings[0]).toMatchObject({ eventId: "evt-1", countryCode: "IR" });
+    expect(anthropicCreate).toHaveBeenCalledTimes(2);
+    expect(anthropicCreate.mock.calls[0][0]).toMatchObject({
+      output_config: expect.objectContaining({ effort: "high" }),
+    });
+    expect(anthropicCreate.mock.calls[1][0]).toMatchObject({
+      output_config: expect.objectContaining({ effort: "medium" }),
+    });
+    vi.unstubAllEnvs();
+  });
+
+  it("degrades to an empty result when both the high- and medium-effort attempts fail to parse", async () => {
+    vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
+    const anthropicCreate = vi.fn().mockResolvedValue({
+      content: [{ type: "text", text: "{\"framings\": [truncated" }],
+    });
+    const { GET } = await mockRouteDeps({
+      fetchCountryCoverage: vi.fn().mockResolvedValue({ articles: [article("A")], tier: "from-country" }),
+      anthropicCreate,
+    });
+
+    const response = await GET(new Request("http://localhost/api/event-framing?eventId=evt-1"));
+
+    expect(await response.json()).toEqual({ framings: [], differences: [], notCoveredBy: [] });
+    expect(anthropicCreate).toHaveBeenCalledTimes(2);
+    vi.unstubAllEnvs();
+  });
+
+  it("does not retry a genuine API failure (only a JSON parse failure is worth a second call)", async () => {
+    vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
+    const anthropicCreate = vi.fn().mockRejectedValue(new Error("rate limited"));
+    const { GET } = await mockRouteDeps({
+      fetchCountryCoverage: vi.fn().mockResolvedValue({ articles: [article("A")], tier: "from-country" }),
+      anthropicCreate,
+    });
+
+    await GET(new Request("http://localhost/api/event-framing?eventId=evt-1"));
+
+    expect(anthropicCreate).toHaveBeenCalledTimes(1);
     vi.unstubAllEnvs();
   });
 });

@@ -454,7 +454,50 @@ describe("GET /api/event-framing", () => {
     vi.unstubAllEnvs();
   });
 
-  it("degrades to an empty result when both the high- and medium-effort attempts fail to parse, flagged as a real failure", async () => {
+  it("retries twice after two JSON parse failures, and succeeds at the low-effort retry", async () => {
+    vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
+    const anthropicCreate = vi
+      .fn()
+      .mockResolvedValueOnce({ content: [{ type: "text", text: "{\"framings\": [truncated" }] })
+      .mockResolvedValueOnce({ content: [{ type: "text", text: "{\"framings\": [truncated" }] })
+      .mockResolvedValueOnce({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              framings: [
+                {
+                  countryCode: "IR",
+                  mainFrame: "Frame",
+                  toneCategory: "critical",
+                  keyEmphasis: ["a"],
+                  mainNarrative: "Narrative",
+                  contentTier: "headline-only",
+                },
+              ],
+              differences: [],
+            }),
+          },
+        ],
+      });
+    const { GET } = await mockRouteDeps({
+      fetchCountryCoverage: vi.fn().mockResolvedValue({ articles: [article("A")], tier: "from-country" }),
+      anthropicCreate,
+    });
+
+    const response = await GET(new Request("http://localhost/api/event-framing?eventId=evt-1"));
+    const body = await response.json();
+
+    expect(body.framings[0]).toMatchObject({ eventId: "evt-1", countryCode: "IR" });
+    expect(body.generationFailed).toBeUndefined();
+    expect(anthropicCreate).toHaveBeenCalledTimes(3);
+    expect(anthropicCreate.mock.calls[2][0]).toMatchObject({
+      output_config: expect.objectContaining({ effort: "low" }),
+    });
+    vi.unstubAllEnvs();
+  });
+
+  it("degrades to an empty result when all three effort attempts fail to parse, flagged as a real failure", async () => {
     vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
     const anthropicCreate = vi.fn().mockResolvedValue({
       content: [{ type: "text", text: "{\"framings\": [truncated" }],
@@ -472,7 +515,10 @@ describe("GET /api/event-framing", () => {
       notCoveredBy: [],
       generationFailed: true,
     });
-    expect(anthropicCreate).toHaveBeenCalledTimes(2);
+    expect(anthropicCreate).toHaveBeenCalledTimes(3);
+    expect(anthropicCreate.mock.calls[2][0]).toMatchObject({
+      output_config: expect.objectContaining({ effort: "low" }),
+    });
     vi.unstubAllEnvs();
   });
 

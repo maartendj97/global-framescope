@@ -204,15 +204,17 @@ async function generateEventFraming(
   const client = new Anthropic({ apiKey });
   const prompt = buildEventFramingPrompt(event, countries, contentByCountry);
 
-  // "high" (the API default) first, then one retry at "medium" if — and
-  // only if — the first attempt's failure was a JSON parse error. A lower
-  // effort level spends less of max_tokens on adaptive thinking, which is
-  // the specific failure this retries: thinking eating the whole budget
-  // before the structured JSON finishes, truncating it mid-parse (see the
-  // 2026-07-23 "Unexpected end of JSON input" incident). A genuine API
-  // failure (bad key, rate limit, outage) isn't retried — a different
-  // effort level wouldn't fix that, so it isn't worth a second real call.
-  const efforts = ["high", "medium"] as const;
+  // "high" (the API default) first, then progressively lower effort if —
+  // and only if — the previous attempt's failure was a JSON parse error. A
+  // lower effort level spends less of max_tokens on adaptive thinking,
+  // which is the specific failure this retries: thinking eating the whole
+  // budget before the structured JSON finishes, truncating it mid-parse
+  // (see the 2026-07-23 "Unexpected end of JSON input" incident). A
+  // genuine API failure (bad key, rate limit, outage) isn't retried — a
+  // different effort level wouldn't fix that, so it isn't worth a second
+  // real call. The third tier ("low") was added after the first two still
+  // left the densest conflict-category events failing both attempts.
+  const efforts = ["high", "medium", "low"] as const;
   for (let i = 0; i < efforts.length; i++) {
     const effort = efforts[i];
     let text: string;

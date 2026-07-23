@@ -65,7 +65,8 @@ export async function recordSummaryGeneration(context: string): Promise<number> 
   if (redis) {
     try {
       const globalCount = await redis.incr(usageKey());
-      if (globalCount === 1) await redis.expire(usageKey(), 60 * 60 * 48);
+      // 90 days so the observability dashboard's history view has data.
+      if (globalCount === 1) await redis.expire(usageKey(), 60 * 60 * 24 * 90);
       count = globalCount;
     } catch (error) {
       console.warn("[anthropic] usage counter increment failed:", error);
@@ -100,7 +101,7 @@ export async function recordFramingGeneration(context: string): Promise<number> 
   if (redis) {
     try {
       const globalCount = await redis.incr(framingUsageKey());
-      if (globalCount === 1) await redis.expire(framingUsageKey(), 60 * 60 * 48);
+      if (globalCount === 1) await redis.expire(framingUsageKey(), 60 * 60 * 24 * 90);
       framingCount = globalCount;
     } catch (error) {
       console.warn("[anthropic] framing usage counter increment failed:", error);

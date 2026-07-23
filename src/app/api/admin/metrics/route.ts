@@ -34,7 +34,7 @@ const CURRENTS_SAFE_DAILY_BUDGET = 900;
 // process.env values are ordinary strings, not Buffers — timingSafeEqual
 // needs equal-length Buffers, so a length mismatch is checked first
 // (mismatched lengths would otherwise throw instead of just failing).
-function tokenMatches(provided: string, expected: string): boolean {
+export function tokenMatches(provided: string, expected: string): boolean {
   const providedBuf = Buffer.from(provided);
   const expectedBuf = Buffer.from(expected);
   if (providedBuf.length !== expectedBuf.length) return false;

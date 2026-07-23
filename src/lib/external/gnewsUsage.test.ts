@@ -40,7 +40,7 @@ describe("gnewsUsage", () => {
 
     await recordGNewsCall("test");
 
-    expect(expire).toHaveBeenCalledWith("gnews-usage:2026-07-15", 60 * 60 * 48);
+    expect(expire).toHaveBeenCalledWith("gnews-usage:2026-07-15", 60 * 60 * 24 * 90);
   });
 
   it("falls back to a local in-memory tally when Redis is unavailable", async () => {

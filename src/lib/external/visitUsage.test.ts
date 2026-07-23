@@ -36,8 +36,8 @@ describe("visitUsage", () => {
 
     await recordVisit("hash-a");
 
-    expect(expire).toHaveBeenCalledWith("visits-usage:2026-07-15", 60 * 60 * 48);
-    expect(expire).toHaveBeenCalledWith("visits-unique:2026-07-15", 60 * 60 * 48);
+    expect(expire).toHaveBeenCalledWith("visits-usage:2026-07-15", 60 * 60 * 24 * 90);
+    expect(expire).toHaveBeenCalledWith("visits-unique:2026-07-15", 60 * 60 * 24 * 90);
   });
 
   it("falls back to a local in-memory tally when Redis is unavailable", async () => {

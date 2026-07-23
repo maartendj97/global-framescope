@@ -35,8 +35,10 @@ export async function recordGNewsCall(context: string): Promise<number> {
     try {
       const globalCount = await redis.incr(usageKey());
       // First increment of the day creates the key — give it a lifetime
-      // so old day-counters clean themselves up.
-      if (globalCount === 1) await redis.expire(usageKey(), 60 * 60 * 48);
+      // so old day-counters clean themselves up. 90 days (not just a
+      // couple) so the observability dashboard's history view has
+      // something to show.
+      if (globalCount === 1) await redis.expire(usageKey(), 60 * 60 * 24 * 90);
       count = globalCount;
     } catch (error) {
       // Redis hiccup — the local tally above still counts this call.

@@ -41,12 +41,13 @@ export async function recordVisit(hashedVisitorId: string): Promise<void> {
   if (redis) {
     try {
       const globalCount = await redis.incr(visitsKey());
-      if (globalCount === 1) await redis.expire(visitsKey(), 60 * 60 * 48);
+      // 90 days so the observability dashboard's history view has data.
+      if (globalCount === 1) await redis.expire(visitsKey(), 60 * 60 * 24 * 90);
       await redis.sadd(uniqueKey(), hashedVisitorId);
       // SADD doesn't return "was this the first key write" the way INCR's
       // result of 1 does, so the TTL is set unconditionally — EXPIRE on an
       // already-expiring key is a harmless no-op refresh.
-      await redis.expire(uniqueKey(), 60 * 60 * 48);
+      await redis.expire(uniqueKey(), 60 * 60 * 24 * 90);
     } catch (error) {
       console.warn("[visits] counter update failed:", error);
     }

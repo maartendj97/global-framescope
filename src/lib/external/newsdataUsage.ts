@@ -29,7 +29,8 @@ export async function recordNewsDataCall(context: string): Promise<number> {
   if (redis) {
     try {
       const globalCount = await redis.incr(usageKey());
-      if (globalCount === 1) await redis.expire(usageKey(), 60 * 60 * 48);
+      // 90 days so the observability dashboard's history view has data.
+      if (globalCount === 1) await redis.expire(usageKey(), 60 * 60 * 24 * 90);
       count = globalCount;
     } catch (error) {
       console.warn("[newsdata] usage counter increment failed:", error);

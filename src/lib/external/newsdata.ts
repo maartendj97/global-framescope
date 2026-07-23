@@ -1,4 +1,5 @@
 import { isOverDailyBudget, recordNewsDataCall } from "./newsdataUsage";
+import { describeError, recordError } from "./errorLog";
 import { isSanctionedPublisher } from "./blockedPublishers";
 import { capPerPublisher, MAX_PER_PUBLISHER } from "./articleCap";
 import type { CountryCode, CountrySourceArticle } from "@/types";
@@ -68,6 +69,7 @@ export async function fetchNewsDataCountryCoverage(
     });
     if (!response.ok) {
       console.error(`[newsdata] ${context} responded ${response.status}`);
+      await recordError("newsdata", `${context} responded ${response.status}`);
       return [];
     }
     const data = (await response.json()) as { results?: NewsDataArticle[] };
@@ -80,6 +82,7 @@ export async function fetchNewsDataCountryCoverage(
     });
   } catch (error) {
     console.error(`[newsdata] ${context} fetch failed:`, error);
+    await recordError("newsdata", `${context} fetch failed: ${describeError(error)}`);
     return [];
   }
 }

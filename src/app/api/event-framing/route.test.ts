@@ -162,6 +162,7 @@ describe("GET /api/event-framing", () => {
       getCached: overrides.getCached ?? vi.fn().mockResolvedValue(null),
       setCached: overrides.setCached ?? vi.fn(),
       acquireLock: overrides.acquireLock ?? vi.fn().mockResolvedValue(true),
+      redis: null,
     }));
     vi.doMock("@/lib/external/anthropicUsage", () => ({
       isOverDailyFramingCap: overrides.isOverDailyFramingCap ?? vi.fn().mockResolvedValue(false),

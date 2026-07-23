@@ -2,6 +2,7 @@ import { ALL_CATEGORIES, ALL_COUNTRY_CODES } from "@/types";
 import type { Event, EventCategory } from "@/types";
 import { isSanctionedPublisher } from "./blockedPublishers";
 import { isOverDailyBudget, recordGNewsCall } from "./gnewsUsage";
+import { describeError, recordError } from "./errorLog";
 
 const GNEWS_ENDPOINT = "https://gnews.io/api/v4/search";
 
@@ -212,12 +213,14 @@ async function fetchGNewsCategory(
     });
     if (!response.ok) {
       console.error(`[gnews] events:${category} responded ${response.status}`);
+      await recordError("gnews", `events:${category} responded ${response.status}`);
       return [];
     }
     const data = (await response.json()) as { articles?: GNewsArticle[] };
     return data.articles ?? [];
   } catch (error) {
     console.error(`[gnews] events:${category} fetch failed:`, error);
+    await recordError("gnews", `events:${category} fetch failed: ${describeError(error)}`);
     return [];
   }
 }

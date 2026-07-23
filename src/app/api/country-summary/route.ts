@@ -5,6 +5,7 @@ import { acquireLock, getCached, setCached } from "@/lib/cache";
 import { fetchCountryCoverage } from "@/app/api/country-sources/route";
 import { extractManyWithBudget } from "@/lib/external/articleExtractor";
 import { isOverDailySummaryCap, recordSummaryGeneration } from "@/lib/external/anthropicUsage";
+import { describeError, recordError } from "@/lib/external/errorLog";
 import type { Country, CountryCode, CountrySourceArticle, CoverageTier, Event } from "@/types";
 
 // A cache miss now also does a best-effort full-text extraction pass
@@ -140,6 +141,10 @@ async function generateSummary(
     // A model outage or bad key must never break the sources view —
     // the client renders the coverage list without a summary.
     console.error(`[anthropic] summary generation failed for ${event.id}:${country.code}:`, error);
+    await recordError(
+      "anthropic-summary",
+      `${event.id}:${country.code} failed: ${describeError(error)}`
+    );
     return null;
   }
 }

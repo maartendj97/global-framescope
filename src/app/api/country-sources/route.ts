@@ -6,6 +6,7 @@ import { isSanctionedPublisher } from "@/lib/external/blockedPublishers";
 import { isOverDailyBudget, recordGNewsCall } from "@/lib/external/gnewsUsage";
 import { fetchStateMediaCoverage, STATE_MEDIA_COUNTRIES } from "@/lib/external/stateFeeds";
 import { fetchNewsDataCountryCoverage } from "@/lib/external/newsdata";
+import { describeError, recordError } from "@/lib/external/errorLog";
 import { capPerPublisher, MAX_PER_PUBLISHER } from "@/lib/external/articleCap";
 import type { CountryCode, CountryCoverageResult, CountrySourceArticle, Event } from "@/types";
 
@@ -86,6 +87,7 @@ async function fetchRawArticles(
     const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
     if (!response.ok) {
       console.error(`[gnews] ${context} responded ${response.status}`);
+      await recordError("gnews", `${context} responded ${response.status}`);
       return [];
     }
     const data = (await response.json()) as { articles?: RawGNewsArticle[] };
@@ -99,6 +101,7 @@ async function fetchRawArticles(
     return articles;
   } catch (error) {
     console.error(`[gnews] ${context} fetch failed:`, error);
+    await recordError("gnews", `${context} fetch failed: ${describeError(error)}`);
     return [];
   }
 }

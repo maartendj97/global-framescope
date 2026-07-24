@@ -43,8 +43,10 @@ const MAX_BODY_CHARS_PER_ARTICLE = 1500;
 // remaining articles fall back to the shorter description tier even when
 // extraction succeeded — the same honest-tier mechanism the prompt
 // already explains to the model, just capped in aggregate rather than
-// only per-article.
-const MAX_TOTAL_BODY_CHARS = 20000;
+// only per-article. Lowered from 20000 on 2026-07-24 after the 3-tier
+// effort retry still failed 3/3 on every conflict-category event in
+// production — the retry alone wasn't enough, so cutting input further.
+const MAX_TOTAL_BODY_CHARS = 12000;
 // Below this, slicing a full-text extraction down to fit the remaining
 // budget would produce a fragment too short to honestly call "full-text".
 const MIN_FULLTEXT_CHARS = 200;

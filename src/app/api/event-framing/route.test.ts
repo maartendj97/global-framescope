@@ -199,7 +199,7 @@ describe("GET /api/event-framing", () => {
     }));
     vi.doMock("@anthropic-ai/sdk", () => ({
       default: class {
-        beta = { messages: { create: overrides.anthropicCreate ?? vi.fn() } };
+        messages = { create: overrides.anthropicCreate ?? vi.fn() };
       },
     }));
     return import("./route");

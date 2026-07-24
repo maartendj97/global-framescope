@@ -227,7 +227,17 @@ async function generateEventFraming(
     let stopDetails: string = "none";
     try {
       await recordFramingGeneration(`event-framing:${event.id}`);
-      const response = await client.messages.create({
+      // The 2026-07-24 stop_reason/stop_details logging revealed the real
+      // remaining failure mode for dense conflict events: Sonnet 5's safety
+      // classifier refuses (category "bio") on real war-coverage content,
+      // not a truncation or volume problem — no amount of retrying at a
+      // lower effort or shrinking the prompt could ever fix a refusal.
+      // Server-side fallback retries the same request on Opus 4.8 within
+      // this one call when — and only when — the primary model refuses;
+      // it does not fire on truncation, rate limits, or other errors, so
+      // it's a targeted addition on top of the existing effort retry, not
+      // a replacement for it.
+      const response = await client.beta.messages.create({
         model: "claude-sonnet-5",
         // Sonnet 5 runs adaptive thinking by default, and those thinking
         // tokens count against max_tokens. 2000 left no headroom for the
@@ -241,6 +251,8 @@ async function generateEventFraming(
         max_tokens: 16000,
         output_config: { format: { type: "json_schema", schema: EVENT_FRAMING_JSON_SCHEMA }, effort },
         messages: [{ role: "user", content: prompt }],
+        betas: ["server-side-fallback-2026-06-01"],
+        fallbacks: [{ model: "claude-opus-4-8" }],
       });
       stopReason = response.stop_reason;
       // Only populated when stop_reason is "refusal" — carries the safety
@@ -248,6 +260,11 @@ async function generateEventFraming(
       // no extra call) since stop_reason=refusal turned out to be the real
       // cause behind what looked like a truncation bug (see 2026-07-24).
       stopDetails = JSON.stringify(response.stop_details ?? null);
+      if (response.model !== "claude-sonnet-5") {
+        console.log(
+          `[anthropic] framing for ${event.id} served by fallback model ${response.model} (effort=${effort})`
+        );
+      }
       text = response.content
         .filter((block) => block.type === "text")
         .map((block) => block.text)

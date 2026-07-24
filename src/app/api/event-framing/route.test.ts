@@ -86,7 +86,7 @@ describe("buildEventFramingContent", () => {
   it("downgrades to description tier once the aggregate body budget is spent, even when extraction succeeded", async () => {
     vi.resetModules();
     // 20 articles at 1500 chars each (the per-article cap) = 30,000 chars,
-    // well over the 20,000 aggregate budget — the last several should be
+    // well over the 12,000 aggregate budget — the last several should be
     // downgraded even though extraction "succeeded" for all of them.
     const articles = Array.from({ length: 20 }, (_, i) => article(`A${i}`, { description: `desc ${i}` }));
     const extractedEntries: [string, string][] = articles.map((a) => [a.url, "x".repeat(1500)]);

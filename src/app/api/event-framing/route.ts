@@ -224,6 +224,7 @@ async function generateEventFraming(
     const effort = efforts[i];
     let text: string;
     let stopReason: string | null = null;
+    let stopDetails: string = "none";
     try {
       await recordFramingGeneration(`event-framing:${event.id}`);
       const response = await client.messages.create({
@@ -242,6 +243,11 @@ async function generateEventFraming(
         messages: [{ role: "user", content: prompt }],
       });
       stopReason = response.stop_reason;
+      // Only populated when stop_reason is "refusal" — carries the safety
+      // classifier's category/explanation. Logged unconditionally (cheap,
+      // no extra call) since stop_reason=refusal turned out to be the real
+      // cause behind what looked like a truncation bug (see 2026-07-24).
+      stopDetails = JSON.stringify(response.stop_details ?? null);
       text = response.content
         .filter((block) => block.type === "text")
         .map((block) => block.text)
@@ -265,12 +271,12 @@ async function generateEventFraming(
       // model ending its turn early with malformed output — the two point
       // at different fixes (a higher ceiling vs. a schema/prompt issue).
       console.error(
-        `[anthropic] framing JSON parse failed for ${event.id} (effort=${effort}, stop_reason=${stopReason}):`,
+        `[anthropic] framing JSON parse failed for ${event.id} (effort=${effort}, stop_reason=${stopReason}, stop_details=${stopDetails}):`,
         error
       );
       await recordError(
         "anthropic-framing",
-        `${event.id} JSON parse failed (effort=${effort}, stop_reason=${stopReason}): ${describeError(error)}`
+        `${event.id} JSON parse failed (effort=${effort}, stop_reason=${stopReason}, stop_details=${stopDetails}): ${describeError(error)}`
       );
       if (i === efforts.length - 1) return null;
     }

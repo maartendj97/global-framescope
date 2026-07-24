@@ -200,6 +200,86 @@ const EVENT_FRAMING_JSON_SCHEMA = {
 type RawFraming = Omit<EventCountryFraming, "eventId">;
 type RawDifference = Omit<EventKeyDifference, "eventId">;
 
+type FramingAttempt =
+  | { success: true; result: Omit<EventFramingResult, "notCoveredBy"> }
+  // apiError means the call itself rejected (bad key, rate limit, outage)
+  // — never worth retrying at another effort level. refusal means the
+  // call succeeded but the model declined the content (stop_reason
+  // "refusal"), which effort also can't fix, but which the Opus fallback
+  // might. Anything else (apiError: false, refusal: false) is a genuine
+  // JSON parse failure, the one case the effort ladder actually helps.
+  | { success: false; apiError: boolean; refusal: boolean };
+
+async function attemptFraming(
+  client: Anthropic,
+  event: Event,
+  prompt: string,
+  model: "claude-sonnet-5" | "claude-opus-4-8",
+  effort: "high" | "medium" | "low"
+): Promise<FramingAttempt> {
+  let text: string;
+  let stopReason: string | null = null;
+  let stopDetails = "none";
+  try {
+    await recordFramingGeneration(`event-framing:${event.id}`);
+    const response = await client.messages.create({
+      model,
+      // Sonnet 5 runs adaptive thinking by default, and those thinking
+      // tokens count against max_tokens. 2000 left no headroom for the
+      // 8-country structured JSON after thinking, truncating the output
+      // mid-JSON and failing the parse below — confirmed locally against
+      // this exact prompt shape. Raised from 8000 to 16000 on 2026-07-24:
+      // the densest conflict-category events still failed at 8000 even
+      // after cutting the input prompt by 40%, pointing at output length
+      // (not input volume) as the real ceiling for events with genuine
+      // full coverage across all 8 countries.
+      max_tokens: 16000,
+      output_config: { format: { type: "json_schema", schema: EVENT_FRAMING_JSON_SCHEMA }, effort },
+      messages: [{ role: "user", content: prompt }],
+    });
+    stopReason = response.stop_reason;
+    // Only populated when stop_reason is "refusal" — carries the safety
+    // classifier's category/explanation. Logged unconditionally (cheap,
+    // no extra call) since stop_reason=refusal turned out to be the real
+    // cause behind what looked like a truncation bug (see 2026-07-24).
+    stopDetails = JSON.stringify(response.stop_details ?? null);
+    text = response.content
+      .filter((block) => block.type === "text")
+      .map((block) => block.text)
+      .join("");
+  } catch (error) {
+    console.error(`[anthropic] framing generation failed for ${event.id} (model=${model}):`, error);
+    await recordError("anthropic-framing", `${event.id} failed (model=${model}): ${describeError(error)}`);
+    return { success: false, apiError: true, refusal: false };
+  }
+
+  try {
+    const parsed = JSON.parse(text) as { framings: RawFraming[]; differences: RawDifference[] };
+    return {
+      success: true,
+      result: {
+        framings: parsed.framings.map((framing) => ({ ...framing, eventId: event.id })),
+        differences: parsed.differences.map((difference) => ({ ...difference, eventId: event.id })),
+      },
+    };
+  } catch (error) {
+    // A model outage, malformed JSON, or bad key must never break the
+    // Differences tab — the client renders the honest empty state.
+    // stop_reason distinguishes a genuine max_tokens truncation from the
+    // model ending its turn early with malformed output — the two point
+    // at different fixes (a higher ceiling vs. a schema/prompt issue).
+    console.error(
+      `[anthropic] framing JSON parse failed for ${event.id} (model=${model}, effort=${effort}, stop_reason=${stopReason}, stop_details=${stopDetails}):`,
+      error
+    );
+    await recordError(
+      "anthropic-framing",
+      `${event.id} JSON parse failed (model=${model}, effort=${effort}, stop_reason=${stopReason}, stop_details=${stopDetails}): ${describeError(error)}`
+    );
+    return { success: false, apiError: false, refusal: stopReason === "refusal" };
+  }
+}
+
 async function generateEventFraming(
   event: Event,
   countries: Country[],
@@ -210,94 +290,40 @@ async function generateEventFraming(
   const prompt = buildEventFramingPrompt(event, countries, contentByCountry);
 
   // "high" (the API default) first, then progressively lower effort if —
-  // and only if — the previous attempt's failure was a JSON parse error. A
-  // lower effort level spends less of max_tokens on adaptive thinking,
-  // which is the specific failure this retries: thinking eating the whole
-  // budget before the structured JSON finishes, truncating it mid-parse
-  // (see the 2026-07-23 "Unexpected end of JSON input" incident). A
-  // genuine API failure (bad key, rate limit, outage) isn't retried — a
-  // different effort level wouldn't fix that, so it isn't worth a second
-  // real call. The third tier ("low") was added after the first two still
-  // left the densest conflict-category events failing both attempts.
+  // and only if — the previous attempt's failure was a genuine JSON parse
+  // error (thinking eating the max_tokens budget before the structured
+  // JSON finishes — see the 2026-07-23 "Unexpected end of JSON input"
+  // incident). A refusal is different: it's Sonnet 5's safety classifier
+  // declining the content outright (category "bio" on dense conflict
+  // events, confirmed 2026-07-24 via stop_reason/stop_details) — a lower
+  // effort level doesn't change that, so cycling through the ladder on a
+  // refusal would just waste two more calls. Break out to the Opus
+  // fallback below the moment a refusal is seen instead.
   const efforts = ["high", "medium", "low"] as const;
-  for (let i = 0; i < efforts.length; i++) {
-    const effort = efforts[i];
-    let text: string;
-    let stopReason: string | null = null;
-    let stopDetails: string = "none";
-    try {
-      await recordFramingGeneration(`event-framing:${event.id}`);
-      // The 2026-07-24 stop_reason/stop_details logging revealed the real
-      // remaining failure mode for dense conflict events: Sonnet 5's safety
-      // classifier refuses (category "bio") on real war-coverage content,
-      // not a truncation or volume problem — no amount of retrying at a
-      // lower effort or shrinking the prompt could ever fix a refusal.
-      // Server-side fallback retries the same request on Opus 4.8 within
-      // this one call when — and only when — the primary model refuses;
-      // it does not fire on truncation, rate limits, or other errors, so
-      // it's a targeted addition on top of the existing effort retry, not
-      // a replacement for it.
-      const response = await client.beta.messages.create({
-        model: "claude-sonnet-5",
-        // Sonnet 5 runs adaptive thinking by default, and those thinking
-        // tokens count against max_tokens. 2000 left no headroom for the
-        // 8-country structured JSON after thinking, truncating the output
-        // mid-JSON and failing the parse below — confirmed locally against
-        // this exact prompt shape. Raised from 8000 to 16000 on 2026-07-24:
-        // the densest conflict-category events still failed at 8000 even
-        // after cutting the input prompt by 40%, pointing at output length
-        // (not input volume) as the real ceiling for events with genuine
-        // full coverage across all 8 countries.
-        max_tokens: 16000,
-        output_config: { format: { type: "json_schema", schema: EVENT_FRAMING_JSON_SCHEMA }, effort },
-        messages: [{ role: "user", content: prompt }],
-        betas: ["server-side-fallback-2026-06-01"],
-        fallbacks: [{ model: "claude-opus-4-8" }],
-      });
-      stopReason = response.stop_reason;
-      // Only populated when stop_reason is "refusal" — carries the safety
-      // classifier's category/explanation. Logged unconditionally (cheap,
-      // no extra call) since stop_reason=refusal turned out to be the real
-      // cause behind what looked like a truncation bug (see 2026-07-24).
-      stopDetails = JSON.stringify(response.stop_details ?? null);
-      if (response.model !== "claude-sonnet-5") {
-        console.log(
-          `[anthropic] framing for ${event.id} served by fallback model ${response.model} (effort=${effort})`
-        );
-      }
-      text = response.content
-        .filter((block) => block.type === "text")
-        .map((block) => block.text)
-        .join("");
-    } catch (error) {
-      console.error(`[anthropic] framing generation failed for ${event.id}:`, error);
-      await recordError("anthropic-framing", `${event.id} failed: ${describeError(error)}`);
-      return null;
-    }
-
-    try {
-      const parsed = JSON.parse(text) as { framings: RawFraming[]; differences: RawDifference[] };
-      return {
-        framings: parsed.framings.map((framing) => ({ ...framing, eventId: event.id })),
-        differences: parsed.differences.map((difference) => ({ ...difference, eventId: event.id })),
-      };
-    } catch (error) {
-      // A model outage, malformed JSON, or bad key must never break the
-      // Differences tab — the client renders the honest empty state.
-      // stop_reason distinguishes a genuine max_tokens truncation from the
-      // model ending its turn early with malformed output — the two point
-      // at different fixes (a higher ceiling vs. a schema/prompt issue).
-      console.error(
-        `[anthropic] framing JSON parse failed for ${event.id} (effort=${effort}, stop_reason=${stopReason}, stop_details=${stopDetails}):`,
-        error
-      );
-      await recordError(
-        "anthropic-framing",
-        `${event.id} JSON parse failed (effort=${effort}, stop_reason=${stopReason}, stop_details=${stopDetails}): ${describeError(error)}`
-      );
-      if (i === efforts.length - 1) return null;
+  let sawRefusal = false;
+  for (const effort of efforts) {
+    const attempt = await attemptFraming(client, event, prompt, "claude-sonnet-5", effort);
+    if (attempt.success) return attempt.result;
+    // A genuine API failure (bad key, rate limit, outage) isn't retried at
+    // another effort level — that wouldn't fix it, so a second real call
+    // isn't worth the spend.
+    if (attempt.apiError) return null;
+    if (attempt.refusal) {
+      sawRefusal = true;
+      break;
     }
   }
+
+  if (sawRefusal) {
+    // The API's own refusal message points integrators at the `fallbacks`
+    // request parameter, but that parameter 400s outright on Sonnet 5
+    // ("does not support the `fallbacks` parameter" — confirmed directly
+    // against production 2026-07-24). This is the manual equivalent: one
+    // extra call to Opus 4.8, only spent when Sonnet actually refused.
+    const fallback = await attemptFraming(client, event, prompt, "claude-opus-4-8", "high");
+    if (fallback.success) return fallback.result;
+  }
+
   return null;
 }
 

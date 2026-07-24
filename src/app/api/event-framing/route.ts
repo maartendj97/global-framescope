@@ -423,10 +423,25 @@ export async function GET(request: Request) {
   // the zero-coverage short-circuit above) — a null result means it tried
   // and failed, not that there was nothing to compare. Surfaced so the
   // client can show an honest "failed" state instead of the same empty
-  // arrays a real no-coverage event produces.
+  // arrays a real no-coverage event produces. On failure (most often a
+  // safety-classifier refusal on dense conflict content — see
+  // generateEventFraming), fall back to the real headlines already
+  // fetched above instead of leaving the tab blank: capped to the top 3
+  // per country so the fallback stays a compact overview, not a full
+  // source browser (that's what the Countries tab is for).
   const finalResult: EventFramingResult = result
     ? { ...result, notCoveredBy }
-    : { ...EMPTY_RESULT, notCoveredBy, generationFailed: true };
+    : {
+        ...EMPTY_RESULT,
+        notCoveredBy,
+        generationFailed: true,
+        rawCoverage: coverageByCountry
+          .filter(({ articles }) => articles.length > 0)
+          .map(({ country, articles }) => ({
+            countryCode: country.code,
+            articles: articles.slice(0, 3),
+          })),
+      };
   if (result) {
     await setCached(key, finalResult, FRAMING_TTL_SECONDS);
   }

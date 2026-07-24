@@ -1,9 +1,17 @@
 "use client";
 
 import useSWR from "swr";
-import type { Country, CountryCode, Event, EventCountryFraming, EventKeyDifference } from "@/types";
+import type {
+  Country,
+  CountryCode,
+  CountrySourceArticle,
+  Event,
+  EventCountryFraming,
+  EventKeyDifference,
+} from "@/types";
 import { Flag } from "./Flag";
 import { FramingTable } from "./FramingTable";
+import { RawCoverageList } from "./RawCoverageList";
 import { fetcher, SWR_OPTIONS } from "@/lib/swrFetcher";
 
 type LiveDifferencesTabProps = {
@@ -17,6 +25,7 @@ type EventFramingResponse = {
   notCoveredBy: CountryCode[];
   pending?: boolean;
   generationFailed?: boolean;
+  rawCoverage?: { countryCode: CountryCode; articles: CountrySourceArticle[] }[];
 };
 
 export function LiveDifferencesTab({ event, countries }: LiveDifferencesTabProps) {
@@ -84,11 +93,15 @@ export function LiveDifferencesTab({ event, countries }: LiveDifferencesTabProps
           <div className="mt-3 rounded-2xl border border-border bg-surface p-4">
             <p className="text-sm text-muted-foreground">
               {data.generationFailed
-                ? "This comparison couldn’t be generated — this story may be too large for our system to process right now. Check the Countries tab for real coverage from each country instead."
+                ? "An AI comparison couldn’t be generated for this event. Here’s the real coverage from each country instead:"
                 : "A comparison isn’t available for this event right now — check the Countries tab for real coverage from each country instead."}
             </p>
           </div>
         </div>
+      )}
+
+      {data?.generationFailed && data.rawCoverage && data.rawCoverage.length > 0 && (
+        <RawCoverageList countries={countries} rawCoverage={data.rawCoverage} />
       )}
 
       {!loading && !pending && !error && notCoveredByCountries.length > 0 && (

@@ -1,4 +1,5 @@
 import type { CountryCode } from "./country";
+import type { CountrySourceArticle } from "./coverage";
 import type { ToneCategory } from "./framing";
 
 // How confident the underlying article data actually was, for a given
@@ -47,4 +48,9 @@ export type EventFramingResult = {
   // "we tried and failed" apart from "genuinely nothing to compare",
   // which otherwise render as the same empty arrays.
   generationFailed?: boolean;
+  // Only populated alongside generationFailed: the real per-country
+  // headlines already fetched for the (failed) generation attempt, so the
+  // client can show real coverage instead of just a blank state — no
+  // extra fetch or AI call needed, since this data was already in hand.
+  rawCoverage?: { countryCode: CountryCode; articles: CountrySourceArticle[] }[];
 };

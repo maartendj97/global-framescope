@@ -406,6 +406,11 @@ describe("GET /api/event-framing", () => {
       differences: [],
       notCoveredBy: [],
       generationFailed: true,
+      rawCoverage: [
+        { countryCode: "IR", articles: [article("A")] },
+        { countryCode: "US", articles: [article("A")] },
+        { countryCode: "NL", articles: [article("A")] },
+      ],
     });
     vi.unstubAllEnvs();
   });
@@ -514,6 +519,11 @@ describe("GET /api/event-framing", () => {
       differences: [],
       notCoveredBy: [],
       generationFailed: true,
+      rawCoverage: [
+        { countryCode: "IR", articles: [article("A")] },
+        { countryCode: "US", articles: [article("A")] },
+        { countryCode: "NL", articles: [article("A")] },
+      ],
     });
     expect(anthropicCreate).toHaveBeenCalledTimes(3);
     expect(anthropicCreate.mock.calls[2][0]).toMatchObject({
@@ -533,6 +543,59 @@ describe("GET /api/event-framing", () => {
     await GET(new Request("http://localhost/api/event-framing?eventId=evt-1"));
 
     expect(anthropicCreate).toHaveBeenCalledTimes(1);
+    vi.unstubAllEnvs();
+  });
+
+  it("caps the raw-coverage fallback at 3 articles per country", async () => {
+    vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
+    const fiveArticles = [
+      article("A1"),
+      article("A2"),
+      article("A3"),
+      article("A4"),
+      article("A5"),
+    ];
+    const { GET } = await mockRouteDeps({
+      fetchCountryCoverage: vi.fn().mockResolvedValue({ articles: fiveArticles, tier: "from-country" }),
+      anthropicCreate: vi.fn().mockRejectedValue(new Error("api down")),
+    });
+
+    const response = await GET(new Request("http://localhost/api/event-framing?eventId=evt-1"));
+    const body = await response.json();
+
+    expect(body.rawCoverage.find((entry: { countryCode: string }) => entry.countryCode === "IR").articles)
+      .toEqual([article("A1"), article("A2"), article("A3")]);
+    vi.unstubAllEnvs();
+  });
+
+  it("breaks out to the Opus fallback on a refusal, and still returns rawCoverage when that also fails", async () => {
+    vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
+    const refusalResponse = {
+      stop_reason: "refusal",
+      stop_details: { type: "refusal", category: "bio" },
+      content: [],
+    };
+    const anthropicCreate = vi.fn().mockResolvedValue(refusalResponse);
+    const { GET } = await mockRouteDeps({
+      fetchCountryCoverage: vi.fn().mockResolvedValue({ articles: [article("A")], tier: "from-country" }),
+      anthropicCreate,
+    });
+
+    const response = await GET(new Request("http://localhost/api/event-framing?eventId=evt-1"));
+    const body = await response.json();
+
+    // One Sonnet attempt (breaks the effort ladder on the first refusal
+    // instead of wasting two more calls at other effort levels), then
+    // exactly one Opus attempt — not three-plus-three.
+    expect(anthropicCreate).toHaveBeenCalledTimes(2);
+    expect(anthropicCreate.mock.calls[0][0]).toMatchObject({ model: "claude-sonnet-5" });
+    expect(anthropicCreate.mock.calls[1][0]).toMatchObject({ model: "claude-opus-4-8" });
+    expect(body.generationFailed).toBe(true);
+    expect(body.rawCoverage).toEqual([
+      { countryCode: "IR", articles: [article("A")] },
+      { countryCode: "US", articles: [article("A")] },
+      { countryCode: "NL", articles: [article("A")] },
+    ]);
     vi.unstubAllEnvs();
   });
 });

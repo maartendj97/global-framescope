@@ -21,10 +21,13 @@ import type {
 
 // Worst case: the throttled 8-country coverage loop alone documents
 // ~15-25s (see event-sources/route.ts), plus the extraction phase budget
-// (below) plus one Anthropic call — 90s is comfortable headroom under
-// Vercel's 300s Fluid Compute default (also documented there), not an
-// assumption of unlimited time.
-export const maxDuration = 90;
+// (below) plus one Anthropic call. Raised from 90 on 2026-07-24 alongside
+// the max_tokens increase below — a successful dense-event call already
+// took 74-81s at the old 8000-token ceiling, so a higher ceiling needs
+// more headroom to avoid the function itself timing out before a genuine
+// (non-truncated) response finishes. Still comfortably under Vercel's
+// 300s Fluid Compute default (also documented there).
+export const maxDuration = 150;
 
 const FRAMING_CACHE_VERSION = "v1";
 const FRAMING_TTL_SECONDS = 24 * 60 * 60;
@@ -220,6 +223,7 @@ async function generateEventFraming(
   for (let i = 0; i < efforts.length; i++) {
     const effort = efforts[i];
     let text: string;
+    let stopReason: string | null = null;
     try {
       await recordFramingGeneration(`event-framing:${event.id}`);
       const response = await client.messages.create({
@@ -228,12 +232,16 @@ async function generateEventFraming(
         // tokens count against max_tokens. 2000 left no headroom for the
         // 8-country structured JSON after thinking, truncating the output
         // mid-JSON and failing the parse below — confirmed locally against
-        // this exact prompt shape. 8000 gives both phases comfortable room
-        // in the common case; the effort retry below covers the rest.
-        max_tokens: 8000,
+        // this exact prompt shape. Raised from 8000 to 16000 on 2026-07-24:
+        // the densest conflict-category events still failed at 8000 even
+        // after cutting the input prompt by 40%, pointing at output length
+        // (not input volume) as the real ceiling for events with genuine
+        // full coverage across all 8 countries.
+        max_tokens: 16000,
         output_config: { format: { type: "json_schema", schema: EVENT_FRAMING_JSON_SCHEMA }, effort },
         messages: [{ role: "user", content: prompt }],
       });
+      stopReason = response.stop_reason;
       text = response.content
         .filter((block) => block.type === "text")
         .map((block) => block.text)
@@ -253,13 +261,16 @@ async function generateEventFraming(
     } catch (error) {
       // A model outage, malformed JSON, or bad key must never break the
       // Differences tab — the client renders the honest empty state.
+      // stop_reason distinguishes a genuine max_tokens truncation from the
+      // model ending its turn early with malformed output — the two point
+      // at different fixes (a higher ceiling vs. a schema/prompt issue).
       console.error(
-        `[anthropic] framing JSON parse failed for ${event.id} (effort=${effort}):`,
+        `[anthropic] framing JSON parse failed for ${event.id} (effort=${effort}, stop_reason=${stopReason}):`,
         error
       );
       await recordError(
         "anthropic-framing",
-        `${event.id} JSON parse failed (effort=${effort}): ${describeError(error)}`
+        `${event.id} JSON parse failed (effort=${effort}, stop_reason=${stopReason}): ${describeError(error)}`
       );
       if (i === efforts.length - 1) return null;
     }
